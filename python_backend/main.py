@@ -79,54 +79,31 @@ async def websocket_endpoint(ws: WebSocket):
 def voice_command():
     """Handle voice command request with advanced recognition"""
     try:
-        log_info("Voice command requested (advanced mode)")
+        log_info("Voice command requested")
         
         # Use advanced voice recognition
         from python_backend.voice_advanced import listen_command_advanced, test_microphone_access
         
-        # First test microphone
+        # Quick microphone test
         if not test_microphone_access():
+            log_error("Microphone not accessible")
             return {
-                "error": "❌ Microphone Not Accessible",
-                "details": "Please check:\n" +
-                          "1. Microphone is connected properly\n" +
-                          "2. Windows Settings > Privacy > Microphone permissions enabled\n" +
-                          "3. No other app is using the microphone\n" +
-                          "4. Try unplugging and reconnecting your microphone",
-                "troubleshooting": {
-                    "step1": "Check microphone connection",
-                    "step2": "Enable microphone permissions in Windows Settings",
-                    "step3": "Close other apps using microphone (Zoom, Teams, etc.)",
-                    "step4": "Click 'Calibrate Voice' button",
-                    "step5": "Restart VEDA AI"
-                }
+                "error": "Microphone not accessible. Please check your microphone connection and permissions in Windows Settings.",
+                "status": "error"
             }
         
-        # Try to get voice command
+        # Get voice command
         command = listen_command_advanced()
         
         if not command:
-            log_warning("No voice detected or recognition failed")
+            log_warning("No voice detected")
             return {
-                "error": "❌ Voice Recognition Error",
-                "message": "No voice detected. Please check:",
-                "tips": [
-                    "1. Microphone is connected and working",
-                    "2. Microphone permissions are enabled",
-                    "3. Speak clearly and loudly",
-                    "4. Internet connection is active",
-                    "5. Try running: python -m python_backend.voice_advanced"
-                ],
-                "troubleshooting": "💡 Troubleshooting:\n" +
-                                 "• Click '🎯 Calibrate Voice' button\n" +
-                                 "• Check microphone in Windows Settings\n" +
-                                 "• Ensure internet connection is active\n" +
-                                 "• Try speaking louder and clearer\n" +
-                                 "• Reduce background noise"
+                "error": "No voice detected. Please speak clearly and try again.",
+                "status": "no_speech"
             }
         
         if len(command) > 500:
-            return {"error": "Command too long"}
+            return {"error": "Command too long", "status": "error"}
             
         response = process_command(command)
         log_info(f"Voice command processed: {command}")
@@ -135,17 +112,14 @@ def voice_command():
     except OSError as e:
         log_error(f"Microphone access error: {e}")
         return {
-            "error": "❌ Microphone Access Error",
-            "details": str(e),
-            "solution": "Please enable microphone permissions in Windows Settings > Privacy > Microphone"
+            "error": "Microphone access error. Please check Windows Settings > Privacy > Microphone",
+            "status": "error"
         }
     except Exception as e:
         log_error(f"Voice command error: {e}")
         return {
-            "error": "❌ Voice Recognition Failed",
-            "details": str(e),
-            "message": "Please check your microphone and internet connection.",
-            "help": "Try clicking the 'Calibrate Voice' button"
+            "error": f"Voice recognition failed: {str(e)}",
+            "status": "error"
         }
 
 @app.get("/voice/calibrate")

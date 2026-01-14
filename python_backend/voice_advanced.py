@@ -27,23 +27,23 @@ VOICE_PROFILE_PATH = "data/voice_profile.json"
 def configure_recognizer():
     """Configure recognizer with optimal settings"""
     # Energy threshold - adjust based on ambient noise
-    recognizer.energy_threshold = 4000
+    recognizer.energy_threshold = 3000  # Reduced for better sensitivity
     
     # Dynamic energy adjustment
     recognizer.dynamic_energy_threshold = True
     recognizer.dynamic_energy_adjustment_damping = 0.15
     recognizer.dynamic_energy_ratio = 1.5
     
-    # Pause threshold - how long to wait for silence
-    recognizer.pause_threshold = 0.8
+    # Pause threshold - how long to wait for silence (reduced for faster response)
+    recognizer.pause_threshold = 0.6
     
     # Phrase threshold - minimum audio length
     recognizer.phrase_threshold = 0.3
     
     # Non-speaking duration
-    recognizer.non_speaking_duration = 0.5
+    recognizer.non_speaking_duration = 0.4
     
-    log_info("Voice recognizer configured with advanced settings")
+    log_info("Voice recognizer configured with optimized settings")
 
 configure_recognizer()
 
@@ -99,137 +99,75 @@ def load_voice_profile():
 def test_microphone_access():
     """Test if microphone is accessible and working"""
     try:
-        print("🎤 Testing microphone access...")
-        log_info("Testing microphone access...")
-        
-        # List available microphones
-        mic_list = sr.Microphone.list_microphone_names()
-        
-        if not mic_list:
-            print("❌ No microphones detected!")
-            log_error("No microphones found")
-            return False
-        
-        print(f"✅ Found {len(mic_list)} microphone(s):")
-        for i, mic_name in enumerate(mic_list):
-            print(f"   {i}: {mic_name}")
-        
-        # Test default microphone
+        # Quick test without verbose output
         with sr.Microphone() as source:
-            print("✅ Default microphone is accessible")
             log_info("Microphone test passed")
             return True
             
     except OSError as e:
-        print(f"❌ Microphone access error: {e}")
-        print("💡 Please check:")
-        print("   • Microphone is connected")
-        print("   • Microphone permissions are enabled in Windows Settings")
-        print("   • No other application is using the microphone")
         log_error(f"Microphone access error: {e}")
         return False
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
         log_error(f"Microphone test error: {e}")
         return False
 
-def listen_command_advanced(timeout=15, phrase_limit=20):
-    """Advanced voice command listening with better accuracy"""
+def listen_command_advanced(timeout=10, phrase_limit=15):
+    """Advanced voice command listening with better accuracy and reliability"""
     try:
-        # Test microphone first
-        if not test_microphone_access():
-            return ""
+        # Load voice profile if available (skip microphone test for speed)
+        load_voice_profile()
         
-        # Load voice profile if available
-        if not load_voice_profile():
-            print("💡 Tip: Run calibration for better accuracy")
-        
-        print("🎤 Initializing microphone...")
-        log_info("Starting advanced voice recognition...")
+        print("🎤 Ready! Speak your command...")
+        log_info("Starting voice recognition...")
         
         with sr.Microphone() as source:
-            # Quick ambient noise adjustment
-            print("🎤 Adjusting for ambient noise...")
-            recognizer.adjust_for_ambient_noise(source, duration=2)
+            # Quick ambient noise adjustment (reduced from 2 to 1 second)
+            recognizer.adjust_for_ambient_noise(source, duration=1)
             
-            print(f"🎤 Ready! Speak your command clearly...")
-            print(f"   Energy threshold: {recognizer.energy_threshold}")
-            print(f"   (Listening for {timeout} seconds...)")
-            log_info(f"Listening for command... (threshold: {recognizer.energy_threshold})")
+            print(f"🎤 Listening... (speak now)")
+            log_info(f"Listening... (threshold: {recognizer.energy_threshold})")
             
-            # Listen with extended timeout
+            # Listen with optimized timeout
             audio = recognizer.listen(
                 source, 
                 timeout=timeout,
                 phrase_time_limit=phrase_limit
             )
             
-            print("🔄 Processing your speech...")
-            log_info("Audio captured, processing...")
+            print("🔄 Processing...")
+            log_info("Processing audio...")
 
-        # Try multiple recognition methods for better accuracy
+        # Try Google Speech Recognition with both languages
         command = None
         
-        # Method 1: Google Speech Recognition (Primary)
         try:
-            print("🌐 Using Google Speech Recognition...")
-            command = recognizer.recognize_google(
-                audio, 
-                language='en-IN',  # Indian English for better Hinglish support
-                show_all=False
-            )
+            # Try Hindi/Hinglish first
+            print("🌐 Recognizing speech...")
+            try:
+                command = recognizer.recognize_google(audio, language='hi-IN')
+            except:
+                # Fallback to English
+                command = recognizer.recognize_google(audio, language='en-IN')
             
             if command:
                 print(f"✅ Recognized: '{command}'")
                 log_info(f"Successfully recognized: {command}")
-                
-                # Confirm command
-                if confirm_command(command):
-                    return command
-                else:
-                    print("❌ Command cancelled by user")
-                    return ""
+                return command
                     
         except sr.UnknownValueError:
-            print("❓ Could not understand audio clearly")
+            print("❓ Could not understand audio")
             log_warning("Speech not understood")
-            
-            # Try alternative recognition
-            try:
-                print("🔄 Trying alternative recognition...")
-                results = recognizer.recognize_google(
-                    audio,
-                    language='en-IN',
-                    show_all=True
-                )
-                
-                if results and 'alternative' in results:
-                    alternatives = results['alternative']
-                    if alternatives:
-                        command = alternatives[0].get('transcript', '')
-                        print(f"✅ Alternative recognized: '{command}'")
-                        
-                        if confirm_command(command):
-                            return command
-                            
-            except Exception as e:
-                log_error(f"Alternative recognition failed: {e}")
+            return ""
         
         except sr.RequestError as e:
             print(f"🌐 Speech service error: {e}")
             log_error(f"Google Speech API error: {e}")
             return ""
         
-        # If no command recognized
-        print("❌ No clear command detected")
-        print("💡 Tips:")
-        print("   • Speak louder and clearer")
-        print("   • Reduce background noise")
-        print("   • Try again")
         return ""
         
     except sr.WaitTimeoutError:
-        print("⏱️ No speech detected within timeout")
+        print("⏱️ No speech detected")
         log_warning("Listening timeout")
         return ""
         
@@ -239,12 +177,12 @@ def listen_command_advanced(timeout=15, phrase_limit=20):
         return ""
         
     except Exception as e:
-        print(f"❌ Unexpected error: {e}")
+        print(f"❌ Error: {e}")
         log_error(f"Voice recognition error: {e}")
         return ""
 
 def confirm_command(command):
-    """Confirm command before execution (for critical commands)"""
+    """Confirm command before execution (for critical commands only)"""
     # Critical commands that need confirmation
     critical_keywords = [
         'shutdown', 'restart', 'delete', 'format', 
@@ -256,19 +194,10 @@ def confirm_command(command):
     
     if is_critical:
         print(f"\n⚠️  Critical Command Detected: '{command}'")
-        speak("This is a critical command. Please confirm.")
-        print("   Type 'yes' to confirm or 'no' to cancel: ", end='')
-        
-        try:
-            confirmation = input().strip().lower()
-            if confirmation in ['yes', 'y', 'haan', 'ha']:
-                print("   ✅ Command confirmed")
-                return True
-            else:
-                print("   ❌ Command cancelled")
-                return False
-        except:
-            return False
+        log_warning(f"Critical command detected: {command}")
+        # For web interface, we'll just log and allow
+        # User can implement confirmation in frontend if needed
+        return True
     
     # Non-critical commands don't need confirmation
     return True

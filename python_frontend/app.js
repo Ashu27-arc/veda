@@ -143,7 +143,7 @@ function startVoice() {
     }
 
     isListening = true;
-    output.innerText = "🎤 Initializing microphone...\n\nPlease allow microphone access if prompted.\nThen speak clearly when you see 'Listening...'";
+    output.innerText = "🎤 Listening... Speak now!";
     output.style.color = "#00e5ff";
 
     // Add visual feedback
@@ -162,22 +162,18 @@ function startVoice() {
             wave.classList.remove("speaking");
             core.classList.remove("speaking");
 
-            if (data.error) {
-                output.innerText = "❌ Voice Recognition Error\n\n" + data.error;
-                output.style.color = "#ff4444";
-
-                // Show troubleshooting tips after a delay
-                setTimeout(() => {
-                    output.innerText += "\n\n💡 Troubleshooting:\n" +
-                        "• Click '🎯 Calibrate Voice' button\n" +
-                        "• Check microphone in Windows Settings\n" +
-                        "• Ensure internet connection is active\n" +
-                        "• Try speaking louder and clearer\n" +
-                        "• Reduce background noise";
-                }, 1000);
-            } else if (data.response) {
+            if (data.status === "success" && data.response) {
+                // Success - show command and response
                 output.innerText = "You: " + data.command + "\n\n🤖 VEDA: " + data.response;
                 output.style.color = "#00e5ff";
+            } else if (data.status === "no_speech") {
+                // No speech detected - simple message
+                output.innerText = "⚠️ No speech detected. Please try again and speak clearly.";
+                output.style.color = "#ff9800";
+            } else if (data.error) {
+                // Error occurred
+                output.innerText = "❌ " + data.error;
+                output.style.color = "#ff4444";
             } else {
                 output.innerText = "⚠️ No response received";
                 output.style.color = "#ff9800";
@@ -189,12 +185,7 @@ function startVoice() {
             core.classList.remove("speaking");
 
             console.error("❌ Voice error:", error);
-            output.innerText = "❌ Connection Error\n\n" +
-                "Could not connect to voice recognition service.\n\n" +
-                "Please ensure:\n" +
-                "• VEDA AI server is running (python run_veda_ai.py)\n" +
-                "• Internet connection is active\n" +
-                "• Microphone is connected and working";
+            output.innerText = "❌ Connection Error\n\nPlease ensure VEDA AI server is running.";
             output.style.color = "#ff4444";
         });
 }
