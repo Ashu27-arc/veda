@@ -21,7 +21,7 @@ function connectWebSocket() {
 
         ws.onopen = () => {
             console.log("✅ Connected to VEDA AI");
-            output.innerText = "✅ Connected! Ready for commands...\n\nTry saying: 'Hello' or 'Status'";
+            output.innerText = "✅ Connecting to VEDA...";
             output.style.color = "#00ff00";
             reconnectAttempts = 0;
         };
@@ -54,8 +54,17 @@ function connectWebSocket() {
                 if (data.error) {
                     output.innerText = "❌ Error: " + data.error;
                     output.style.color = "#ff4444";
+                } else if (data.type === "greeting") {
+                    // Handle initial greeting from VEDA
+                    output.innerText = "🤖 VEDA: " + data.response + "\n\n✅ Ready for commands!";
+                    output.style.color = "#00e5ff";
                 } else if (data.response) {
-                    output.innerText = "You: " + data.command + "\n\nVEDA AI: " + data.response;
+                    // Show command and response
+                    if (data.command === "system_greeting") {
+                        output.innerText = "🤖 VEDA: " + data.response;
+                    } else {
+                        output.innerText = "You: " + data.command + "\n\n🤖 VEDA: " + data.response;
+                    }
                     output.style.color = "#00e5ff";
                 } else {
                     output.innerText = event.data;
@@ -167,7 +176,7 @@ function startVoice() {
                         "• Reduce background noise";
                 }, 1000);
             } else if (data.response) {
-                output.innerText = "You: " + data.command + "\n\nVEDA AI: " + data.response;
+                output.innerText = "You: " + data.command + "\n\n🤖 VEDA: " + data.response;
                 output.style.color = "#00e5ff";
             } else {
                 output.innerText = "⚠️ No response received";

@@ -41,6 +41,11 @@ async def websocket_endpoint(ws: WebSocket):
     active_connections.append(ws)
     log_info("WebSocket connection established")
     
+    # Send greeting when connection is established
+    jarvis = get_jarvis()
+    greeting = jarvis.get_greeting()
+    await ws.send_json({"response": greeting, "command": "system_greeting", "type": "greeting"})
+    
     try:
         while True:
             command = await ws.receive_text()

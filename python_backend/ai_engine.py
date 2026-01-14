@@ -4,6 +4,7 @@ from python_backend.utils import is_online
 from python_backend.online_ai import chatgpt_response
 from python_backend.local_ai import local_ai_response
 from python_backend.logger import log_info, log_error, log_warning
+from python_backend.jarvis_personality import get_jarvis
 import time
 
 # Track last command and timestamp to handle repeated commands
@@ -21,9 +22,13 @@ def process_command(command: str, auto_speak: bool = True):
     """
     global _last_command, _last_command_time, _last_response
     
+    # Get JARVIS personality instance
+    jarvis = get_jarvis()
+    
     if not command or not isinstance(command, str):
         return "Invalid command"
     
+    original_command = command
     command = command.lower().strip()
     
     # Prevent command injection
@@ -44,11 +49,39 @@ def process_command(command: str, auto_speak: bool = True):
     _last_command_time = current_time
     
     log_info(f"Processing command: {command} (time since last: {time_since_last:.2f}s)")
+    
+    # Handle greetings with personality
+    greeting_words = ['hello', 'hi', 'hey', 'namaste', 'namaskar', 'good morning', 'good afternoon', 'good evening']
+    if any(word in command for word in greeting_words):
+        response = jarvis.get_greeting()
+        _last_response = response
+        if auto_speak:
+            speak(response)
+        return response
+    
+    # 🎯 ACKNOWLEDGE COMMAND FIRST (like JARVIS does)
+    # Don't acknowledge for simple queries, only for action commands
+    action_keywords = ['open', 'close', 'start', 'stop', 'play', 'pause', 'shutdown', 'restart', 
+                       'volume', 'brightness', 'search', 'find', 'create', 'delete', 'run',
+                       'kholo', 'band', 'chalu', 'shuru', 'karo', 'बंद', 'खोलो', 'चालू']
+    
+    is_action_command = any(keyword in command for keyword in action_keywords)
+    
+    if is_action_command and auto_speak:
+        # Acknowledge the command immediately
+        acknowledgment = jarvis.acknowledge_command()
+        speak(acknowledgment)
+        log_info(f"Acknowledged: {acknowledgment}")
 
     try:
         # 1️⃣ WEATHER COMMAND
         if "weather" in command or "mausam" in command or "मौसम" in command:
             from python_backend.weather import get_weather_by_city, get_weather_multiple_cities
+            
+            # Acknowledge weather query
+            if auto_speak and not is_action_command:
+                ack = jarvis.get_thinking_response()
+                speak(ack)
             
             # Detect language - default to Hinglish for better Hindi support
             language = 'hinglish' if any(word in command for word in ['mausam', 'मौसम', 'kaisa', 'kaise', 'कैसा', 'कैसे']) else 'english'
@@ -121,18 +154,35 @@ def process_command(command: str, auto_speak: bool = True):
         # 2️⃣ SYSTEM COMMAND
         system_response = handle_system_command(command)
         if system_response:
+            # System response already has action, just return it
+            # (acknowledgment was already spoken above if it's an action command)
             _last_response = system_response
             if auto_speak:
                 speak(system_response)
             log_info(f"System response: {system_response}")
             return system_response
 
-        # 3️⃣ AI MODE
+        # 3️⃣ AI MODE - Add personality layer
         response = None
+        
+        # Show thinking response (only if not already acknowledged)
+        if auto_speak and not is_action_command:
+            thinking = jarvis.get_thinking_response()
+            speak(thinking)
+        
         if is_online():
             try:
-                response = chatgpt_response(command)
-                log_info("Using online AI")
+                # Add personality context to AI prompt
+                personality_prompt = f"""You are VEDA AI, an intelligent assistant like JARVIS from Iron Man. 
+You address your owner as '{jarvis.owner_name}'. 
+Be professional, respectful, and conversational.
+Respond naturally in a mix of Hindi and English (Hinglish) if the user speaks in Hinglish.
+Keep responses concise and helpful.
+
+User query: {original_command}"""
+                
+                response = chatgpt_response(personality_prompt)
+                log_info("Using online AI with personality")
             except Exception as e:
                 log_error(f"Online AI failed: {e}")
                 response = None
@@ -141,6 +191,10 @@ def process_command(command: str, auto_speak: bool = True):
         if not response or "not configured" in response.lower():
             response = local_ai_response(command)
             log_info("Using offline AI")
+            
+            # Add personality touch to local AI response
+            if response and not response.startswith(jarvis.owner_name):
+                response = f"{jarvis.owner_name}, {response}"
 
         # Cache the response for repeated commands
         _last_response = response

@@ -128,9 +128,10 @@ def listen_command():
         return ""
 
 def speak(text):
-    """Convert text to speech"""
+    """Convert text to speech with personality"""
     try:
-        print(f"🔊 VEDA AI: {text}")
+        # Show who is speaking
+        print(f"🔊 VEDA: {text}")
         log_info(f"Speaking: {text}")
         
         # Reinitialize engine for each speak to avoid state issues
@@ -144,6 +145,9 @@ def speak(text):
         engine = pyttsx3.init()
         engine.setProperty("rate", 175)
         engine.setProperty("volume", 1.0)
+        
+        # Set voice if available
+        set_hindi_voice()
         
         # Speak the text
         engine.say(text)
