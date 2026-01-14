@@ -459,19 +459,62 @@ LOG_LEVEL=INFO
 
 ### Voice Not Working?
 
-1. **Calibrate Voice**
-   - Click "🎯 Calibrate Voice" button
-   - Stay silent for 3 seconds
-   
-2. **Check Microphone**
-   - Ensure microphone is connected
-   - Check Windows microphone permissions
-   - Test with: `python calibrate_voice.py`
+#### Quick Fix (Recommended)
+```bash
+# Run the automatic fix tool
+python fix_microphone.py
+```
 
-3. **Adjust Settings**
-   - Increase microphone volume (80-100%)
+This will:
+- ✅ Detect your microphone
+- ✅ Test microphone access
+- ✅ Calibrate for your environment
+- ✅ Test voice recognition
+- ✅ Save optimal settings
+
+#### Manual Troubleshooting
+
+1. **Test Microphone**
+   ```bash
+   # Run comprehensive microphone test
+   python test_microphone.py
+   ```
+   This will diagnose all microphone issues and provide specific solutions.
+
+2. **Calibrate Voice**
+   - Click "🎯 Calibrate Voice" button in UI
+   - OR run: `python calibrate_voice.py`
+   - Stay silent for 3 seconds during calibration
+   
+3. **Check Microphone Permissions**
+   - Open Windows Settings > Privacy > Microphone
+   - Enable "Allow apps to access your microphone"
+   - Enable "Allow desktop apps to access your microphone"
+   - Ensure Python is allowed
+
+4. **Check Microphone Connection**
+   - Ensure microphone is properly connected
+   - Try a different USB port
+   - Check if microphone works in other apps (Discord, Zoom)
+   - Close other apps using microphone
+
+5. **Adjust Microphone Settings**
+   - Right-click speaker icon in taskbar
+   - Select "Sounds" > "Recording" tab
+   - Select your microphone > "Properties"
+   - Set level to 80-100%
+   - Ensure microphone is not muted
+
+6. **Internet Connection**
+   - Voice recognition requires internet
+   - Check your connection
+   - Try: `ping google.com`
+
+7. **Speak Clearly**
+   - Speak at normal pace
    - Reduce background noise
-   - Speak clearly and at normal pace
+   - Position microphone 6-12 inches from mouth
+   - Speak louder if needed
 
 ### Commands Not Recognized?
 

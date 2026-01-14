@@ -96,9 +96,50 @@ def load_voice_profile():
     
     return False
 
+def test_microphone_access():
+    """Test if microphone is accessible and working"""
+    try:
+        print("🎤 Testing microphone access...")
+        log_info("Testing microphone access...")
+        
+        # List available microphones
+        mic_list = sr.Microphone.list_microphone_names()
+        
+        if not mic_list:
+            print("❌ No microphones detected!")
+            log_error("No microphones found")
+            return False
+        
+        print(f"✅ Found {len(mic_list)} microphone(s):")
+        for i, mic_name in enumerate(mic_list):
+            print(f"   {i}: {mic_name}")
+        
+        # Test default microphone
+        with sr.Microphone() as source:
+            print("✅ Default microphone is accessible")
+            log_info("Microphone test passed")
+            return True
+            
+    except OSError as e:
+        print(f"❌ Microphone access error: {e}")
+        print("💡 Please check:")
+        print("   • Microphone is connected")
+        print("   • Microphone permissions are enabled in Windows Settings")
+        print("   • No other application is using the microphone")
+        log_error(f"Microphone access error: {e}")
+        return False
+    except Exception as e:
+        print(f"❌ Unexpected error: {e}")
+        log_error(f"Microphone test error: {e}")
+        return False
+
 def listen_command_advanced(timeout=15, phrase_limit=20):
     """Advanced voice command listening with better accuracy"""
     try:
+        # Test microphone first
+        if not test_microphone_access():
+            return ""
+        
         # Load voice profile if available
         if not load_voice_profile():
             print("💡 Tip: Run calibration for better accuracy")
@@ -109,11 +150,12 @@ def listen_command_advanced(timeout=15, phrase_limit=20):
         with sr.Microphone() as source:
             # Quick ambient noise adjustment
             print("🎤 Adjusting for ambient noise...")
-            recognizer.adjust_for_ambient_noise(source, duration=1)
+            recognizer.adjust_for_ambient_noise(source, duration=2)
             
-            print("🎤 Ready! Speak your command clearly...")
-            print("   (Speak naturally, I'm listening...)")
-            log_info("Listening for command...")
+            print(f"🎤 Ready! Speak your command clearly...")
+            print(f"   Energy threshold: {recognizer.energy_threshold}")
+            print(f"   (Listening for {timeout} seconds...)")
+            log_info(f"Listening for command... (threshold: {recognizer.energy_threshold})")
             
             # Listen with extended timeout
             audio = recognizer.listen(

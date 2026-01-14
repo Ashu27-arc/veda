@@ -33,19 +33,55 @@ recognizer.energy_threshold = 4000  # Adjust based on ambient noise
 recognizer.dynamic_energy_threshold = True
 recognizer.pause_threshold = 0.8  # Seconds of silence before phrase is complete
 
+def test_microphone():
+    """Test if microphone is accessible"""
+    try:
+        # List available microphones
+        mic_list = sr.Microphone.list_microphone_names()
+        
+        if not mic_list:
+            log_error("No microphones detected")
+            print("❌ No microphones found!")
+            print("💡 Please connect a microphone and try again")
+            return False
+        
+        print(f"✅ Found {len(mic_list)} microphone(s)")
+        log_info(f"Found {len(mic_list)} microphone(s)")
+        
+        # Test default microphone
+        with sr.Microphone() as source:
+            log_info("Microphone test successful")
+            print("✅ Microphone is working")
+            return True
+            
+    except OSError as e:
+        log_error(f"Microphone access error: {e}")
+        print(f"❌ Microphone error: {e}")
+        print("💡 Check Windows Settings > Privacy > Microphone")
+        return False
+    except Exception as e:
+        log_error(f"Microphone test failed: {e}")
+        print(f"❌ Test failed: {e}")
+        return False
+
 def listen_command():
     """Listen for voice command from microphone"""
     try:
+        # Test microphone first
+        if not test_microphone():
+            return ""
+        
         print("🎤 Initializing microphone...")
         log_info("Initializing microphone...")
         
         with sr.Microphone() as source:
             print("🎤 Adjusting for ambient noise... (please wait)")
             log_info("Adjusting for ambient noise...")
-            recognizer.adjust_for_ambient_noise(source, duration=1)
+            recognizer.adjust_for_ambient_noise(source, duration=2)
             
-            print("🎤 Listening... Speak now!")
-            log_info("Listening for command...")
+            print(f"🎤 Listening... Speak now!")
+            print(f"   Energy threshold: {recognizer.energy_threshold}")
+            log_info(f"Listening for command... (threshold: {recognizer.energy_threshold})")
             
             # Listen with longer timeout
             audio = recognizer.listen(source, timeout=10, phrase_time_limit=15)

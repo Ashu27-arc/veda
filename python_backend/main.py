@@ -77,18 +77,47 @@ def voice_command():
         log_info("Voice command requested (advanced mode)")
         
         # Use advanced voice recognition
-        from python_backend.voice_advanced import listen_command_advanced
+        from python_backend.voice_advanced import listen_command_advanced, test_microphone_access
+        
+        # First test microphone
+        if not test_microphone_access():
+            return {
+                "error": "❌ Microphone Not Accessible",
+                "details": "Please check:\n" +
+                          "1. Microphone is connected properly\n" +
+                          "2. Windows Settings > Privacy > Microphone permissions enabled\n" +
+                          "3. No other app is using the microphone\n" +
+                          "4. Try unplugging and reconnecting your microphone",
+                "troubleshooting": {
+                    "step1": "Check microphone connection",
+                    "step2": "Enable microphone permissions in Windows Settings",
+                    "step3": "Close other apps using microphone (Zoom, Teams, etc.)",
+                    "step4": "Click 'Calibrate Voice' button",
+                    "step5": "Restart VEDA AI"
+                }
+            }
+        
+        # Try to get voice command
         command = listen_command_advanced()
         
         if not command:
             log_warning("No voice detected or recognition failed")
             return {
-                "error": "No voice detected. Please check:\n" +
-                        "1. Microphone is connected and working\n" +
-                        "2. Microphone permissions are enabled\n" +
-                        "3. Speak clearly and loudly\n" +
-                        "4. Internet connection is active\n" +
-                        "5. Try running: python -m python_backend.voice_advanced"
+                "error": "❌ Voice Recognition Error",
+                "message": "No voice detected. Please check:",
+                "tips": [
+                    "1. Microphone is connected and working",
+                    "2. Microphone permissions are enabled",
+                    "3. Speak clearly and loudly",
+                    "4. Internet connection is active",
+                    "5. Try running: python -m python_backend.voice_advanced"
+                ],
+                "troubleshooting": "💡 Troubleshooting:\n" +
+                                 "• Click '🎯 Calibrate Voice' button\n" +
+                                 "• Check microphone in Windows Settings\n" +
+                                 "• Ensure internet connection is active\n" +
+                                 "• Try speaking louder and clearer\n" +
+                                 "• Reduce background noise"
             }
         
         if len(command) > 500:
@@ -96,13 +125,22 @@ def voice_command():
             
         response = process_command(command)
         log_info(f"Voice command processed: {command}")
-        return {"command": command, "response": response}
+        return {"command": command, "response": response, "status": "success"}
         
+    except OSError as e:
+        log_error(f"Microphone access error: {e}")
+        return {
+            "error": "❌ Microphone Access Error",
+            "details": str(e),
+            "solution": "Please enable microphone permissions in Windows Settings > Privacy > Microphone"
+        }
     except Exception as e:
         log_error(f"Voice command error: {e}")
         return {
-            "error": f"Voice recognition failed: {str(e)}\n" +
-                    "Please check your microphone and internet connection."
+            "error": "❌ Voice Recognition Failed",
+            "details": str(e),
+            "message": "Please check your microphone and internet connection.",
+            "help": "Try clicking the 'Calibrate Voice' button"
         }
 
 @app.get("/voice/calibrate")
