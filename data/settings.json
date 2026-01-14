@@ -1,0 +1,14 @@
+{
+  "owner_name": "Sir",
+  "personality": "jarvis",
+  "language_preference": "hinglish",
+  "voice_speed": 175,
+  "proactive_suggestions": true,
+  "confirmation_required": {
+    "system_shutdown": true,
+    "system_restart": true,
+    "file_deletion": true
+  },
+  "startup_greeting": true,
+  "theme": "dark"
+}
