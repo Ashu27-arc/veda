@@ -84,10 +84,11 @@ VEDA AI is an advanced personal AI assistant built with Python, featuring voice 
   - Current date
   - System health
 
-### 🎮 Gesture Control
-- **Hand Gesture Recognition** - Control system with hand movements
-- **MediaPipe Integration** - Real-time hand tracking
-- **Camera-based Control** - Uses webcam for gesture detection
+### 🎮 Gesture Control (Experimental)
+- **Basic Gesture Detection** - Experimental hand detection feature
+- **MediaPipe Integration** - Uses MediaPipe for hand tracking
+- **Camera-based Control** - Webcam-based gesture detection (limited functionality)
+- **Note**: Currently in development, basic volume control only
 
 ### 🔊 Wake Word Detection
 - **Always Listening Mode** - Activate with "Hey Computer"
@@ -518,6 +519,7 @@ LOG_LEVEL=INFO
 
 ### Upcoming Features
 
+- [ ] **Advanced Gesture Controls** - Full hand gesture system for system control
 - [ ] Mobile app (Android/iOS)
 - [ ] Multi-language support (Spanish, French, etc.)
 - [ ] Custom wake word training
@@ -525,9 +527,15 @@ LOG_LEVEL=INFO
 - [ ] Calendar and reminder system
 - [ ] Email management
 - [ ] Music player control
-- [ ] Advanced gesture controls
 - [ ] Voice authentication
 - [ ] Cloud sync
+
+### Known Limitations
+
+- **Gesture Control**: Currently experimental with limited functionality (basic volume control only)
+- **Wake Word**: Requires Picovoice API key for "Hey Computer" activation
+- **Voice Recognition**: Requires internet connection for best accuracy
+- **System Commands**: Windows-only (Linux/Mac support planned)
 
 ---
 
