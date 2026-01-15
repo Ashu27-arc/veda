@@ -1,6 +1,7 @@
 # Environment variables
 .env
 *.env
+z-api-key.txt
 
 # Python
 __pycache__/

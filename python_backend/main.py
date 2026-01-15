@@ -23,13 +23,19 @@ log_info(f"VEDA AI initializing for {get_owner_name()}")
 
 app = FastAPI(title="VEDA AI", version="2.0.0")
 
-# More secure CORS configuration
+# Secure CORS configuration - only allow local origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8000", "http://127.0.0.1:8000"],
+    allow_origins=[
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://localhost:3000",  # For development
+        "http://127.0.0.1:3000"
+    ],
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
+    max_age=3600,  # Cache preflight requests for 1 hour
 )
 
 # Active WebSocket connections
@@ -50,13 +56,22 @@ async def websocket_endpoint(ws: WebSocket):
         while True:
             command = await ws.receive_text()
             
-            # Input validation
+            # Enhanced input validation
             if not command or len(command.strip()) == 0:
                 await ws.send_json({"error": "Empty command"})
                 continue
                 
             if len(command) > 500:
-                await ws.send_json({"error": "Command too long"})
+                await ws.send_json({"error": "Command too long (max 500 characters)"})
+                continue
+            
+            # Sanitize input
+            from python_backend.utils import sanitize_input, validate_command
+            command = sanitize_input(command)
+            
+            if not validate_command(command):
+                await ws.send_json({"error": "Invalid or potentially malicious command"})
+                log_warning(f"Blocked potentially malicious command: {command}")
                 continue
             
             log_info(f"WebSocket command received: {command}")

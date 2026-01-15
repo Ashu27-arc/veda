@@ -3,11 +3,158 @@ import subprocess
 import psutil
 import pyautogui
 import ctypes
-from ctypes import cast, POINTER
+import winreg
 from comtypes import CLSCTX_ALL
-from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-from python_backend.logger import log_info, log_error
+from pycaw.pycaw import AudioUtilities
+from python_backend.logger import log_info, log_error, log_warning
 from python_backend.jarvis_personality import get_jarvis
+
+# =========================
+# APP FINDER - SMART APP DETECTION
+# =========================
+def find_application(app_name):
+    """
+    Smart application finder - searches multiple locations
+    Returns path if found, None otherwise
+    """
+    app_name_lower = app_name.lower().strip()
+    
+    # Common app mappings
+    app_mappings = {
+        'chrome': ['chrome.exe', 'Google\\Chrome\\Application\\chrome.exe'],
+        'firefox': ['firefox.exe', 'Mozilla Firefox\\firefox.exe'],
+        'edge': ['msedge.exe', 'Microsoft\\Edge\\Application\\msedge.exe'],
+        'brave': ['brave.exe', 'BraveSoftware\\Brave-Browser\\Application\\brave.exe'],
+        'notepad': ['notepad.exe'],
+        'calculator': ['calc.exe', 'CalculatorApp.exe'],
+        'paint': ['mspaint.exe'],
+        'word': ['winword.exe', 'Microsoft Office\\root\\Office16\\WINWORD.EXE'],
+        'excel': ['excel.exe', 'Microsoft Office\\root\\Office16\\EXCEL.EXE'],
+        'powerpoint': ['powerpnt.exe', 'Microsoft Office\\root\\Office16\\POWERPNT.EXE'],
+        'outlook': ['outlook.exe', 'Microsoft Office\\root\\Office16\\OUTLOOK.EXE'],
+        'onenote': ['onenote.exe', 'Microsoft Office\\root\\Office16\\ONENOTE.EXE'],
+        'teams': ['Teams.exe', 'Microsoft\\Teams\\current\\Teams.exe'],
+        'zoom': ['Zoom.exe', 'Zoom\\bin\\Zoom.exe'],
+        'discord': ['Discord.exe', 'Discord\\app-*\\Discord.exe'],
+        'spotify': ['Spotify.exe', 'Spotify\\Spotify.exe'],
+        'vlc': ['vlc.exe', 'VideoLAN\\VLC\\vlc.exe'],
+        'vscode': ['Code.exe', 'Microsoft VS Code\\Code.exe'],
+        'pycharm': ['pycharm64.exe', 'JetBrains\\PyCharm*\\bin\\pycharm64.exe'],
+        'photoshop': ['Photoshop.exe', 'Adobe\\Adobe Photoshop*\\Photoshop.exe'],
+        'illustrator': ['Illustrator.exe', 'Adobe\\Adobe Illustrator*\\Support Files\\Contents\\Windows\\Illustrator.exe'],
+        'premiere': ['Adobe Premiere Pro.exe', 'Adobe\\Adobe Premiere Pro*\\Adobe Premiere Pro.exe'],
+        'obs': ['obs64.exe', 'obs-studio\\bin\\64bit\\obs64.exe'],
+        'steam': ['steam.exe', 'Steam\\steam.exe'],
+        'epic': ['EpicGamesLauncher.exe', 'Epic Games\\Launcher\\Portal\\Binaries\\Win64\\EpicGamesLauncher.exe'],
+    }
+    
+    # Get possible filenames
+    possible_names = app_mappings.get(app_name_lower, [f'{app_name}.exe'])
+    
+    # Search locations
+    search_paths = [
+        os.environ.get('PROGRAMFILES', 'C:\\Program Files'),
+        os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)'),
+        os.path.join(os.environ.get('LOCALAPPDATA', ''), 'Programs'),
+        os.path.join(os.environ.get('APPDATA', ''), 'Local\\Programs'),
+        'C:\\Windows\\System32',
+        'C:\\Windows',
+    ]
+    
+    # Try each possible name in each location
+    for name in possible_names:
+        # Try direct execution first (for system apps)
+        try:
+            result = subprocess.run(['where', name.split('\\')[-1]], 
+                                  capture_output=True, text=True, timeout=2)
+            if result.returncode == 0 and result.stdout.strip():
+                path = result.stdout.strip().split('\n')[0]
+                if os.path.exists(path):
+                    log_info(f"Found {app_name} at: {path}")
+                    return path
+        except:
+            pass
+        
+        # Search in common directories
+        for base_path in search_paths:
+            if not os.path.exists(base_path):
+                continue
+                
+            # Direct path
+            full_path = os.path.join(base_path, name)
+            if os.path.exists(full_path):
+                log_info(f"Found {app_name} at: {full_path}")
+                return full_path
+            
+            # Search subdirectories (one level deep)
+            try:
+                for item in os.listdir(base_path):
+                    item_path = os.path.join(base_path, item)
+                    if os.path.isdir(item_path):
+                        sub_path = os.path.join(item_path, name.split('\\')[-1])
+                        if os.path.exists(sub_path):
+                            log_info(f"Found {app_name} at: {sub_path}")
+                            return sub_path
+            except (PermissionError, OSError):
+                continue
+    
+    # Try Windows Registry for installed apps
+    try:
+        registry_paths = [
+            r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths",
+            r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\App Paths"
+        ]
+        
+        for reg_path in registry_paths:
+            try:
+                key = winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, reg_path)
+                for i in range(winreg.QueryInfoKey(key)[0]):
+                    try:
+                        subkey_name = winreg.EnumKey(key, i)
+                        if app_name_lower in subkey_name.lower():
+                            subkey = winreg.OpenKey(key, subkey_name)
+                            path, _ = winreg.QueryValueEx(subkey, "")
+                            if os.path.exists(path):
+                                log_info(f"Found {app_name} in registry: {path}")
+                                return path
+                    except:
+                        continue
+            except:
+                continue
+    except:
+        pass
+    
+    log_warning(f"Could not find application: {app_name}")
+    return None
+
+
+def open_application(app_name):
+    """
+    Open any application by name
+    """
+    jarvis = get_jarvis()
+    
+    # Find the application
+    app_path = find_application(app_name)
+    
+    if app_path:
+        try:
+            subprocess.Popen(app_path)
+            log_info(f"Successfully opened: {app_name}")
+            return f"Opening {app_name}, {jarvis.owner_name}."
+        except Exception as e:
+            log_error(f"Failed to open {app_name}: {e}")
+            return f"{jarvis.owner_name}, I found {app_name} but couldn't open it."
+    else:
+        # Try as direct command (might be in PATH)
+        try:
+            subprocess.Popen(app_name)
+            log_info(f"Opened {app_name} as direct command")
+            return f"Opening {app_name}, {jarvis.owner_name}."
+        except:
+            log_error(f"Application not found: {app_name}")
+            return f"{jarvis.owner_name}, I couldn't find {app_name} on your system."
+
 
 # =========================
 # VOLUME CONTROL
@@ -16,24 +163,58 @@ def set_volume(action):
     """Control system volume"""
     try:
         jarvis = get_jarvis()
+        
+        # Get all audio devices - returns AudioDevice object
         devices = AudioUtilities.GetSpeakers()
-        interface = devices.Activate(
-            IAudioEndpointVolume._iid_, CLSCTX_ALL, None
-        )
-        volume = cast(interface, POINTER(IAudioEndpointVolume))
+        
+        # Get volume interface directly from AudioDevice
+        volume = devices.EndpointVolume
+        
+        # Get current volume level
         current = volume.GetMasterVolumeLevelScalar()
 
         if action == "up":
-            volume.SetMasterVolumeLevelScalar(min(current + 0.1, 1.0), None)
+            new_volume = min(current + 0.1, 1.0)
+            volume.SetMasterVolumeLevelScalar(new_volume, None)
+            log_info(f"Volume increased to {int(new_volume * 100)}%")
             return f"Volume increased, {jarvis.owner_name}."
 
         if action == "down":
-            volume.SetMasterVolumeLevelScalar(max(current - 0.1, 0.0), None)
+            new_volume = max(current - 0.1, 0.0)
+            volume.SetMasterVolumeLevelScalar(new_volume, None)
+            log_info(f"Volume decreased to {int(new_volume * 100)}%")
             return f"Volume decreased, {jarvis.owner_name}."
 
         if action == "mute":
             volume.SetMute(1, None)
+            log_info("Volume muted")
             return f"Volume muted, {jarvis.owner_name}."
+            
+        if action == "unmute":
+            volume.SetMute(0, None)
+            log_info("Volume unmuted")
+            return f"Volume unmuted, {jarvis.owner_name}."
+            
+    except AttributeError as e:
+        # Fallback to keyboard shortcuts if pycaw doesn't work
+        log_warning(f"Volume control via pycaw failed: {e}, using keyboard shortcuts")
+        try:
+            if action == "up":
+                pyautogui.press('volumeup')
+                return f"Volume increased, {jarvis.owner_name}."
+            elif action == "down":
+                pyautogui.press('volumedown')
+                return f"Volume decreased, {jarvis.owner_name}."
+            elif action == "mute":
+                pyautogui.press('volumemute')
+                return f"Volume muted, {jarvis.owner_name}."
+            elif action == "unmute":
+                pyautogui.press('volumemute')
+                return f"Volume unmuted, {jarvis.owner_name}."
+        except Exception as fallback_error:
+            log_error(f"Keyboard fallback also failed: {fallback_error}")
+            jarvis = get_jarvis()
+            return f"I apologize, {jarvis.owner_name}, but I couldn't control the volume."
     except Exception as e:
         log_error(f"Volume control error: {e}")
         jarvis = get_jarvis()
@@ -47,201 +228,286 @@ def handle_system_command(command):
     """Handle system-level commands with JARVIS personality"""
     try:
         jarvis = get_jarvis()
+        original_command = command
+        command = command.lower().strip()
         
-        # ---- APPS & SOFTWARE ----
-        if "open chrome" in command or "chrome kholo" in command:
-            subprocess.Popen("chrome")
-            log_info("Opening Chrome")
-            return f"Opening Chrome, {jarvis.owner_name}." if "open" in command else f"Chrome khol raha hoon, {jarvis.owner_name}."
+        log_info(f"System control checking command: {command}")
+        
+        # ---- WEBSITES ----
+        if any(site in command for site in ['youtube', 'google', 'gmail', 'facebook', 'instagram', 
+                                              'twitter', 'whatsapp', 'spotify', 'netflix', 'amazon',
+                                              'linkedin', 'github', 'stackoverflow', 'reddit']):
+            if any(word in command for word in ['open', 'kholo', 'start', 'chalu', 'browse', 'search']):
+                import webbrowser
+                
+                site_urls = {
+                    'youtube': 'https://www.youtube.com',
+                    'google': 'https://www.google.com',
+                    'gmail': 'https://mail.google.com',
+                    'facebook': 'https://www.facebook.com',
+                    'instagram': 'https://www.instagram.com',
+                    'twitter': 'https://www.twitter.com',
+                    'whatsapp': 'https://web.whatsapp.com',
+                    'spotify': 'https://open.spotify.com',
+                    'netflix': 'https://www.netflix.com',
+                    'amazon': 'https://www.amazon.in',
+                    'linkedin': 'https://www.linkedin.com',
+                    'github': 'https://www.github.com',
+                    'stackoverflow': 'https://stackoverflow.com',
+                    'reddit': 'https://www.reddit.com',
+                }
+                
+                for site, url in site_urls.items():
+                    if site in command:
+                        try:
+                            webbrowser.open(url)
+                            log_info(f"Opening {site}")
+                            return f"Opening {site.title()}, {jarvis.owner_name}." if "open" in command else f"{site.title()} khol raha hoon, {jarvis.owner_name}."
+                        except Exception as e:
+                            log_error(f"{site} error: {e}")
+                            return f"{jarvis.owner_name}, I couldn't open {site.title()}."
 
-        if "open notepad" in command or "notepad kholo" in command:
-            subprocess.Popen("notepad")
-            log_info("Opening Notepad")
-            return f"Opening Notepad, {jarvis.owner_name}." if "open" in command else f"Notepad khol raha hoon, {jarvis.owner_name}."
-        
-        if "open youtube" in command or "youtube kholo" in command:
-            import webbrowser
-            webbrowser.open("https://www.youtube.com")
-            log_info("Opening YouTube")
-            return f"Opening YouTube, {jarvis.owner_name}." if "open" in command else f"YouTube khol raha hoon, {jarvis.owner_name}."
-        
-        if "open google" in command or "google kholo" in command:
-            import webbrowser
-            webbrowser.open("https://www.google.com")
-            log_info("Opening Google")
-            return f"Opening Google, {jarvis.owner_name}." if "open" in command else f"Google khol raha hoon, {jarvis.owner_name}."
-        
-        if "open whatsapp" in command or "whatsapp kholo" in command:
-            import webbrowser
-            webbrowser.open("https://web.whatsapp.com")
-            log_info("Opening WhatsApp")
-            return f"Opening WhatsApp Web, {jarvis.owner_name}." if "open" in command else f"WhatsApp khol raha hoon, {jarvis.owner_name}."
-        
-        if "open gmail" in command or "gmail kholo" in command:
-            import webbrowser
-            webbrowser.open("https://mail.google.com")
-            log_info("Opening Gmail")
-            return f"Opening Gmail, {jarvis.owner_name}." if "open" in command else f"Gmail khol raha hoon, {jarvis.owner_name}."
-        
-        if "open facebook" in command or "facebook kholo" in command:
-            import webbrowser
-            webbrowser.open("https://www.facebook.com")
-            log_info("Opening Facebook")
-            return f"Opening Facebook, {jarvis.owner_name}." if "open" in command else f"Facebook khol raha hoon, {jarvis.owner_name}."
-        
-        if "open instagram" in command or "instagram kholo" in command:
-            import webbrowser
-            webbrowser.open("https://www.instagram.com")
-            log_info("Opening Instagram")
-            return f"Opening Instagram, {jarvis.owner_name}." if "open" in command else f"Instagram khol raha hoon, {jarvis.owner_name}."
-        
-        if "open twitter" in command or "twitter kholo" in command or "open x" in command:
-            import webbrowser
-            webbrowser.open("https://www.twitter.com")
-            log_info("Opening Twitter/X")
-            return f"Opening Twitter, {jarvis.owner_name}." if "open" in command else f"Twitter khol raha hoon, {jarvis.owner_name}."
-        
-        if "open spotify" in command or "spotify kholo" in command:
-            import webbrowser
-            webbrowser.open("https://open.spotify.com")
-            log_info("Opening Spotify")
-            return f"Opening Spotify, {jarvis.owner_name}." if "open" in command else f"Spotify khol raha hoon, {jarvis.owner_name}."
-        
-        if "open calculator" in command or "calculator kholo" in command:
-            subprocess.Popen("calc")
-            log_info("Opening Calculator")
-            return f"Opening Calculator, {jarvis.owner_name}." if "open" in command else f"Calculator khol raha hoon, {jarvis.owner_name}."
-        
-        if "open paint" in command or "paint kholo" in command:
-            subprocess.Popen("mspaint")
-            log_info("Opening Paint")
-            return f"Opening Paint, {jarvis.owner_name}." if "open" in command else f"Paint khol raha hoon, {jarvis.owner_name}."
-        
-        if "open word" in command or "word kholo" in command:
-            subprocess.Popen("winword")
-            log_info("Opening Word")
-            return f"Opening Microsoft Word, {jarvis.owner_name}." if "open" in command else f"Word khol raha hoon, {jarvis.owner_name}."
-        
-        if "open excel" in command or "excel kholo" in command:
-            subprocess.Popen("excel")
-            log_info("Opening Excel")
-            return f"Opening Microsoft Excel, {jarvis.owner_name}." if "open" in command else f"Excel khol raha hoon, {jarvis.owner_name}."
-        
-        if "open powerpoint" in command or "powerpoint kholo" in command:
-            subprocess.Popen("powerpnt")
-            log_info("Opening PowerPoint")
-            return f"Opening PowerPoint, {jarvis.owner_name}." if "open" in command else f"PowerPoint khol raha hoon, {jarvis.owner_name}."
-        
-        if "open file explorer" in command or "explorer kholo" in command or "files kholo" in command:
-            subprocess.Popen("explorer")
-            log_info("Opening File Explorer")
-            return f"Opening File Explorer, {jarvis.owner_name}." if "open" in command else f"File Explorer khol raha hoon, {jarvis.owner_name}."
-        
-        # THIS PC / MY COMPUTER
-        if "open this pc" in command or "open my computer" in command or "this pc kholo" in command or "my computer kholo" in command or "computer kholo" in command:
-            subprocess.Popen("explorer.exe shell:MyComputerFolder")
-            log_info("Opening This PC")
-            return f"Opening This PC, {jarvis.owner_name}." if "open" in command else f"This PC khol raha hoon, {jarvis.owner_name}."
-        
-        if "open task manager" in command or "task manager kholo" in command:
-            subprocess.Popen("taskmgr")
-            log_info("Opening Task Manager")
-            return f"Opening Task Manager, {jarvis.owner_name}." if "open" in command else f"Task Manager khol raha hoon, {jarvis.owner_name}."
-        
-        if "open control panel" in command or "control panel kholo" in command:
-            subprocess.Popen("control")
-            log_info("Opening Control Panel")
-            return f"Opening Control Panel, {jarvis.owner_name}." if "open" in command else f"Control Panel khol raha hoon, {jarvis.owner_name}."
-        
-        if "open settings" in command or "settings kholo" in command:
-            subprocess.Popen("ms-settings:")
-            log_info("Opening Settings")
-            return f"Opening Windows Settings, {jarvis.owner_name}." if "open" in command else f"Settings khol raha hoon, {jarvis.owner_name}."
+        # ---- VOLUME CONTROL ----
+        if "volume" in command or "sound" in command or "audio" in command:
+            if any(word in command for word in ['up', 'increase', 'badha', 'badhao', 'high', 'zyada']):
+                return set_volume("up")
+            elif any(word in command for word in ['down', 'decrease', 'kam', 'kamao', 'low', 'kum']):
+                return set_volume("down")
+            elif any(word in command for word in ['mute', 'silent', 'chup', 'band']):
+                return set_volume("mute")
+            elif any(word in command for word in ['unmute', 'chalu', 'on']):
+                return set_volume("unmute")
 
-        # ---- VOLUME ----
-        if "volume up" in command or "volume badha" in command or "volume badhao" in command:
-            return set_volume("up")
-
-        if "volume down" in command or "volume kam kar" in command or "volume kamao" in command:
-            return set_volume("down")
-
-        if "mute volume" in command or "volume mute kar" in command or "chup kar" in command:
-            return set_volume("mute")
-
-        # ---- FILE / FOLDER ----
-        if "open downloads" in command or "downloads kholo" in command:
-            os.startfile(os.path.expanduser("~/Downloads"))
-            return f"Opening Downloads folder, {jarvis.owner_name}." if "open" in command else f"Downloads folder khol raha hoon, {jarvis.owner_name}."
-
-        if "open documents" in command or "documents kholo" in command:
-            os.startfile(os.path.expanduser("~/Documents"))
-            return f"Opening Documents folder, {jarvis.owner_name}." if "open" in command else f"Documents folder khol raha hoon, {jarvis.owner_name}."
+        # ---- FOLDERS ----
+        folder_commands = {
+            'downloads': os.path.join(os.path.expanduser('~'), 'Downloads'),
+            'documents': os.path.join(os.path.expanduser('~'), 'Documents'),
+            'pictures': os.path.join(os.path.expanduser('~'), 'Pictures'),
+            'photos': os.path.join(os.path.expanduser('~'), 'Pictures'),
+            'music': os.path.join(os.path.expanduser('~'), 'Music'),
+            'videos': os.path.join(os.path.expanduser('~'), 'Videos'),
+            'desktop': os.path.join(os.path.expanduser('~'), 'Desktop'),
+        }
         
-        if "open pictures" in command or "pictures kholo" in command or "photos kholo" in command:
-            os.startfile(os.path.expanduser("~/Pictures"))
-            return f"Opening Pictures folder, {jarvis.owner_name}." if "open" in command else f"Pictures folder khol raha hoon, {jarvis.owner_name}."
+        for folder_name, folder_path in folder_commands.items():
+            if folder_name in command and any(word in command for word in ['open', 'kholo', 'show']):
+                try:
+                    # Create folder if it doesn't exist
+                    if not os.path.exists(folder_path):
+                        os.makedirs(folder_path, exist_ok=True)
+                        log_info(f"Created missing folder: {folder_path}")
+                    
+                    os.startfile(folder_path)
+                    log_info(f"Opening {folder_name} folder")
+                    return f"Opening {folder_name.title()} folder, {jarvis.owner_name}." if "open" in command else f"{folder_name.title()} folder khol raha hoon, {jarvis.owner_name}."
+                except Exception as e:
+                    log_error(f"Folder error: {e}")
+                    return f"{jarvis.owner_name}, I couldn't open {folder_name} folder."
+
+        # ---- SYSTEM COMMANDS (HIGH PRIORITY - CHECK FIRST) ----
+        # These need to be checked BEFORE generic app opener
         
-        if "open music" in command or "music kholo" in command:
-            os.startfile(os.path.expanduser("~/Music"))
-            return f"Opening Music folder, {jarvis.owner_name}." if "open" in command else f"Music folder khol raha hoon, {jarvis.owner_name}."
+        # Task Manager
+        if "task manager" in command or "taskmanager" in command or "taskmgr" in command:
+            if any(word in command for word in ['open', 'kholo', 'start', 'chalu', 'show']):
+                try:
+                    subprocess.Popen("taskmgr.exe")
+                    log_info("Opening Task Manager")
+                    return f"Opening Task Manager, {jarvis.owner_name}." if "open" in command else f"Task Manager khol raha hoon, {jarvis.owner_name}."
+                except Exception as e:
+                    log_error(f"Task Manager error: {e}")
+                    return f"{jarvis.owner_name}, I couldn't open Task Manager."
         
-        if "open videos" in command or "videos kholo" in command:
-            os.startfile(os.path.expanduser("~/Videos"))
-            return f"Opening Videos folder, {jarvis.owner_name}." if "open" in command else f"Videos folder khol raha hoon, {jarvis.owner_name}."
+        # This PC / My Computer
+        if ("this pc" in command or "my computer" in command or "mycomputer" in command or 
+            ("computer" in command and any(word in command for word in ['open', 'kholo', 'show']))):
+            # Make sure it's not "lock computer" or "restart computer"
+            if not any(word in command for word in ['lock', 'restart', 'shutdown', 'band']):
+                try:
+                    subprocess.Popen("explorer.exe shell:MyComputerFolder")
+                    log_info("Opening This PC")
+                    return f"Opening This PC, {jarvis.owner_name}." if "open" in command else f"This PC khol raha hoon, {jarvis.owner_name}."
+                except Exception as e:
+                    log_error(f"This PC error: {e}")
+                    return f"{jarvis.owner_name}, I couldn't open This PC."
+        
+        # File Explorer
+        if ("file explorer" in command or "fileexplorer" in command or 
+            ("explorer" in command and not "internet explorer" in command)):
+            if any(word in command for word in ['open', 'kholo', 'start', 'chalu', 'show']):
+                try:
+                    subprocess.Popen("explorer.exe")
+                    log_info("Opening File Explorer")
+                    return f"Opening File Explorer, {jarvis.owner_name}." if "open" in command else f"File Explorer khol raha hoon, {jarvis.owner_name}."
+                except Exception as e:
+                    log_error(f"File Explorer error: {e}")
+                    return f"{jarvis.owner_name}, I couldn't open File Explorer."
+
+        # Control Panel
+        if "control panel" in command or "controlpanel" in command:
+            if any(word in command for word in ['open', 'kholo', 'start', 'chalu', 'show']):
+                try:
+                    subprocess.Popen("control.exe")
+                    log_info("Opening Control Panel")
+                    return f"Opening Control Panel, {jarvis.owner_name}." if "open" in command else f"Control Panel khol raha hoon, {jarvis.owner_name}."
+                except Exception as e:
+                    log_error(f"Control Panel error: {e}")
+                    return f"{jarvis.owner_name}, I couldn't open Control Panel."
+
+        # Windows Settings
+        if ("settings" in command or "setting" in command) and not "control panel" in command:
+            if any(word in command for word in ['open', 'kholo', 'start', 'chalu', 'show']):
+                try:
+                    subprocess.Popen("start ms-settings:", shell=True)
+                    log_info("Opening Settings")
+                    return f"Opening Windows Settings, {jarvis.owner_name}." if "open" in command else f"Settings khol raha hoon, {jarvis.owner_name}."
+                except Exception as e:
+                    log_error(f"Settings error: {e}")
+                    return f"{jarvis.owner_name}, I couldn't open Settings."
+        
+        # Command Prompt
+        if "command prompt" in command or "cmd" in command or "terminal" in command:
+            if any(word in command for word in ['open', 'kholo', 'start', 'chalu', 'show']):
+                try:
+                    subprocess.Popen("cmd.exe")
+                    log_info("Opening Command Prompt")
+                    return f"Opening Command Prompt, {jarvis.owner_name}." if "open" in command else f"Command Prompt khol raha hoon, {jarvis.owner_name}."
+                except Exception as e:
+                    log_error(f"Command Prompt error: {e}")
+                    return f"{jarvis.owner_name}, I couldn't open Command Prompt."
+        
+        # PowerShell
+        if "powershell" in command or "power shell" in command:
+            if any(word in command for word in ['open', 'kholo', 'start', 'chalu', 'show']):
+                try:
+                    subprocess.Popen("powershell.exe")
+                    log_info("Opening PowerShell")
+                    return f"Opening PowerShell, {jarvis.owner_name}." if "open" in command else f"PowerShell khol raha hoon, {jarvis.owner_name}."
+                except Exception as e:
+                    log_error(f"PowerShell error: {e}")
+                    return f"{jarvis.owner_name}, I couldn't open PowerShell."
+        
+        # Recycle Bin
+        if "recycle bin" in command or "recyclebin" in command or "trash" in command:
+            if any(word in command for word in ['open', 'kholo', 'start', 'chalu', 'show']):
+                try:
+                    subprocess.Popen("explorer.exe shell:RecycleBinFolder")
+                    log_info("Opening Recycle Bin")
+                    return f"Opening Recycle Bin, {jarvis.owner_name}." if "open" in command else f"Recycle Bin khol raha hoon, {jarvis.owner_name}."
+                except Exception as e:
+                    log_error(f"Recycle Bin error: {e}")
+                    return f"{jarvis.owner_name}, I couldn't open Recycle Bin."
 
         # ---- SCREENSHOT ----
-        if "take screenshot" in command or "screenshot le" in command or "screenshot lo" in command:
-            pyautogui.screenshot("screenshot.png")
-            return f"Screenshot captured, {jarvis.owner_name}." if "take" in command else f"Screenshot le liya, {jarvis.owner_name}."
+        if "screenshot" in command or "screen capture" in command:
+            if any(word in command for word in ['take', 'capture', 'le', 'lo', 'lena']):
+                try:
+                    # Create Pictures folder if it doesn't exist
+                    pictures_folder = os.path.join(os.path.expanduser("~"), "Pictures")
+                    if not os.path.exists(pictures_folder):
+                        os.makedirs(pictures_folder, exist_ok=True)
+                        log_info(f"Created Pictures folder: {pictures_folder}")
+                    
+                    # Generate unique filename with timestamp
+                    import datetime
+                    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    screenshot_path = os.path.join(pictures_folder, f"screenshot_{timestamp}.png")
+                    
+                    pyautogui.screenshot(screenshot_path)
+                    log_info(f"Screenshot saved to {screenshot_path}")
+                    return f"Screenshot captured and saved, {jarvis.owner_name}." if "take" in command else f"Screenshot le liya, {jarvis.owner_name}."
+                except Exception as e:
+                    log_error(f"Screenshot error: {e}")
+                    return f"{jarvis.owner_name}, I couldn't take a screenshot."
 
         # ---- BATTERY ----
-        if "battery status" in command or "battery check kar" in command or "battery kitni hai" in command:
-            battery = psutil.sensors_battery()
-            if battery:
-                percent = battery.percent
-                if "battery" in command and "kitni" in command:
-                    return f"{jarvis.owner_name}, battery {percent} percent hai."
-                return f"{jarvis.owner_name}, battery is at {percent} percent."
-            return f"I apologize, {jarvis.owner_name}, battery information is not available." if "status" in command else f"{jarvis.owner_name}, battery ki information nahi mil rahi."
+        if "battery" in command:
+            try:
+                battery = psutil.sensors_battery()
+                if battery:
+                    percent = battery.percent
+                    plugged = battery.power_plugged
+                    status = "charging" if plugged else "on battery"
+                    
+                    if "kitni" in command or "how much" in command:
+                        return f"{jarvis.owner_name}, battery {percent} percent hai aur {status}."
+                    return f"{jarvis.owner_name}, battery is at {percent} percent and {status}."
+                return f"I apologize, {jarvis.owner_name}, battery information is not available."
+            except Exception as e:
+                log_error(f"Battery error: {e}")
+                return f"{jarvis.owner_name}, I couldn't check battery status."
 
         # ---- WIFI ----
-        if "wifi off" in command or "wifi band kar" in command:
-            os.system("netsh interface set interface Wi-Fi disable")
-            return f"WiFi turned off, {jarvis.owner_name}." if "off" in command else f"WiFi band kar diya, {jarvis.owner_name}."
-
-        if "wifi on" in command or "wifi chalu kar" in command:
-            os.system("netsh interface set interface Wi-Fi enable")
-            return f"WiFi turned on, {jarvis.owner_name}." if "on" in command else f"WiFi chalu kar diya, {jarvis.owner_name}."
-
-        # ---- SYSTEM ----
-        if "lock system" in command or "system lock kar" in command or "computer lock kar" in command:
-            ctypes.windll.user32.LockWorkStation()
-            return f"Locking system, {jarvis.owner_name}." if "lock system" in command else f"System lock kar raha hoon, {jarvis.owner_name}."
-
-        if "restart system" in command or "system restart kar" in command or "computer restart kar" in command:
-            os.system("shutdown /r /t 5")
-            return f"Restarting system in 5 seconds, {jarvis.owner_name}." if "restart system" in command else f"5 seconds mein system restart ho jayega, {jarvis.owner_name}."
-
-        if "shutdown system" in command or "system band kar" in command or "computer band kar" in command or "shutdown kar" in command:
-            os.system("shutdown /s /t 5")
-            return f"Shutting down system in 5 seconds, {jarvis.owner_name}." if "shutdown system" in command else f"5 seconds mein system band ho jayega, {jarvis.owner_name}."
-        
-        # ---- GENERIC APP OPENER ----
-        # Try to open any application by name
-        if "open" in command or "kholo" in command:
-            # Extract app name
-            app_name = command.replace("open", "").replace("kholo", "").strip()
-            
-            if app_name and len(app_name) > 2:
+        if "wifi" in command or "wi-fi" in command:
+            if any(word in command for word in ['off', 'disable', 'band', 'close']):
                 try:
-                    # Try to open as executable
-                    subprocess.Popen(app_name)
-                    log_info(f"Attempting to open: {app_name}")
-                    return f"Opening {app_name}, {jarvis.owner_name}." if "open" in command else f"{app_name} khol raha hoon, {jarvis.owner_name}."
+                    os.system("netsh interface set interface Wi-Fi disable")
+                    log_info("WiFi turned off")
+                    return f"WiFi turned off, {jarvis.owner_name}." if "off" in command else f"WiFi band kar diya, {jarvis.owner_name}."
                 except Exception as e:
-                    log_error(f"Could not open {app_name}: {e}")
-                    # Don't return error, let AI handle it
-                    return None
+                    log_error(f"WiFi off error: {e}")
+                    return f"{jarvis.owner_name}, I couldn't turn off WiFi."
+            elif any(word in command for word in ['on', 'enable', 'chalu', 'start']):
+                try:
+                    os.system("netsh interface set interface Wi-Fi enable")
+                    log_info("WiFi turned on")
+                    return f"WiFi turned on, {jarvis.owner_name}." if "on" in command else f"WiFi chalu kar diya, {jarvis.owner_name}."
+                except Exception as e:
+                    log_error(f"WiFi on error: {e}")
+                    return f"{jarvis.owner_name}, I couldn't turn on WiFi."
+
+        # ---- SYSTEM POWER ----
+        if "lock" in command and any(word in command for word in ['system', 'computer', 'pc', 'laptop']):
+            try:
+                ctypes.windll.user32.LockWorkStation()
+                log_info("Locking system")
+                return f"Locking system, {jarvis.owner_name}." if "lock" in command else f"System lock kar raha hoon, {jarvis.owner_name}."
+            except Exception as e:
+                log_error(f"Lock error: {e}")
+                return f"{jarvis.owner_name}, I couldn't lock the system."
+
+        if "restart" in command and any(word in command for word in ['system', 'computer', 'pc', 'laptop']):
+            try:
+                os.system("shutdown /r /t 5")
+                log_info("Restarting system")
+                return f"Restarting system in 5 seconds, {jarvis.owner_name}." if "restart" in command else f"5 seconds mein system restart ho jayega, {jarvis.owner_name}."
+            except Exception as e:
+                log_error(f"Restart error: {e}")
+                return f"{jarvis.owner_name}, I couldn't restart the system."
+
+        if "shutdown" in command or ("band" in command and any(word in command for word in ['system', 'computer', 'pc', 'laptop'])):
+            try:
+                os.system("shutdown /s /t 5")
+                log_info("Shutting down system")
+                return f"Shutting down system in 5 seconds, {jarvis.owner_name}." if "shutdown" in command else f"5 seconds mein system band ho jayega, {jarvis.owner_name}."
+            except Exception as e:
+                log_error(f"Shutdown error: {e}")
+                return f"{jarvis.owner_name}, I couldn't shutdown the system."
+
+        # ---- GENERIC APP OPENER (MOST POWERFUL) ----
+        # This will handle ANY app request
+        if any(word in command for word in ['open', 'kholo', 'start', 'chalu', 'launch', 'run']):
+            # Extract app name
+            app_name = command
+            
+            # Remove trigger words
+            for word in ['open', 'kholo', 'start', 'chalu', 'launch', 'run', 'karo', 'kar', 'do']:
+                app_name = app_name.replace(word, '')
+            
+            app_name = app_name.strip()
+            
+            # Skip if it's a website, folder, or system command (already handled above)
+            skip_words = ['youtube', 'google', 'gmail', 'facebook', 'instagram', 'twitter',
+                         'downloads', 'documents', 'pictures', 'music', 'videos', 'desktop',
+                         'explorer', 'computer', 'settings', 'control panel', 'task manager',
+                         'this pc', 'my computer', 'recycle bin', 'command prompt', 'powershell',
+                         'wifi', 'volume', 'screenshot', 'battery', 'lock', 'restart', 'shutdown']
+            
+            if app_name and len(app_name) > 2 and not any(skip in app_name for skip in skip_words):
+                log_info(f"Attempting to open application: {app_name}")
+                result = open_application(app_name)
+                if result:
+                    return result
 
     except Exception as e:
         log_error(f"System command error: {e}")

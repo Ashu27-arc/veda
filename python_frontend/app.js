@@ -6,11 +6,77 @@ let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 let isListening = false;
 
-// Get DOM elements
-const wave = document.getElementById("wave");
-const core = document.querySelector(".veda-core");
-const output = document.getElementById("output");
-const commandInput = document.getElementById("command");
+// =======================
+// STARFIELD ANIMATION
+// =======================
+function initStarfield() {
+    const canvas = document.getElementById('stars');
+    if (!canvas) {
+        console.error('Canvas element not found');
+        return;
+    }
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+        console.error('Could not get canvas context');
+        return;
+    }
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const stars = [];
+    const numStars = 200;
+
+    // Create stars
+    for (let i = 0; i < numStars; i++) {
+        stars.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            radius: Math.random() * 2,
+            opacity: Math.random(),
+            twinkleSpeed: Math.random() * 0.02 + 0.01
+        });
+    }
+
+    // Animate stars
+    function animateStars() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        stars.forEach(star => {
+            // Twinkle effect
+            star.opacity += star.twinkleSpeed;
+            if (star.opacity > 1 || star.opacity < 0) {
+                star.twinkleSpeed = -star.twinkleSpeed;
+            }
+
+            // Draw star
+            ctx.beginPath();
+            ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(0, 229, 255, ${star.opacity})`;
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = 'rgba(0, 229, 255, 0.8)';
+            ctx.fill();
+        });
+
+        requestAnimationFrame(animateStars);
+    }
+
+    animateStars();
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    });
+}
+
+// Initialize starfield when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initStarfield);
+} else {
+    initStarfield();
+}
 
 // =======================
 // WEBSOCKET CONNECTION
@@ -21,33 +87,47 @@ function connectWebSocket() {
 
         ws.onopen = () => {
             console.log("✅ Connected to VEDA AI");
-            output.innerText = "✅ Connecting to VEDA...";
-            output.style.color = "#00ff00";
+            const output = document.getElementById("output");
+            if (output) {
+                output.innerText = "✅ Connecting to VEDA...";
+                output.style.color = "#00ff00";
+            }
             reconnectAttempts = 0;
         };
 
         ws.onerror = (error) => {
             console.error("❌ WebSocket error:", error);
-            output.innerText = "❌ Connection error. Trying to reconnect...";
-            output.style.color = "#ff4444";
+            const output = document.getElementById("output");
+            if (output) {
+                output.innerText = "❌ Connection error. Trying to reconnect...";
+                output.style.color = "#ff4444";
+            }
         };
 
         ws.onclose = () => {
             console.log("⚠️ Disconnected from VEDA AI");
-            output.innerText = "⚠️ Disconnected. Reconnecting...";
-            output.style.color = "#ff9800";
+            const output = document.getElementById("output");
+            if (output) {
+                output.innerText = "⚠️ Disconnected. Reconnecting...";
+                output.style.color = "#ff9800";
+            }
 
             // Try to reconnect
             if (reconnectAttempts < maxReconnectAttempts) {
                 reconnectAttempts++;
                 setTimeout(connectWebSocket, 2000);
             } else {
-                output.innerText = "❌ Connection lost. Please refresh the page or restart VEDA AI server.";
-                output.style.color = "#ff4444";
+                if (output) {
+                    output.innerText = "❌ Connection lost. Please refresh the page or restart VEDA AI server.";
+                    output.style.color = "#ff4444";
+                }
             }
         };
 
         ws.onmessage = (event) => {
+            const output = document.getElementById("output");
+            if (!output) return;
+
             try {
                 const data = JSON.parse(event.data);
 
@@ -78,18 +158,30 @@ function connectWebSocket() {
         };
     } catch (error) {
         console.error("❌ Failed to create WebSocket:", error);
-        output.innerText = "❌ Failed to connect. Please ensure VEDA AI server is running.\n\nRun: python run_veda_ai.py";
-        output.style.color = "#ff4444";
+        const output = document.getElementById("output");
+        if (output) {
+            output.innerText = "❌ Failed to connect. Please ensure VEDA AI server is running.\n\nRun: python run_veda_ai.py";
+            output.style.color = "#ff4444";
+        }
     }
 }
 
-// Initialize WebSocket connection
-connectWebSocket();
+// Initialize WebSocket connection when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', connectWebSocket);
+} else {
+    connectWebSocket();
+}
 
 // =======================
 // TEXT COMMAND
 // =======================
 function sendCommand() {
+    const commandInput = document.getElementById("command");
+    const output = document.getElementById("output");
+
+    if (!commandInput || !output) return;
+
     const command = commandInput.value.trim();
 
     if (!command) {
@@ -126,9 +218,14 @@ function sendCommand() {
 }
 
 // Allow Enter key to send command
-commandInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-        sendCommand();
+document.addEventListener('DOMContentLoaded', () => {
+    const commandInput = document.getElementById("command");
+    if (commandInput) {
+        commandInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                sendCommand();
+            }
+        });
     }
 });
 
@@ -136,6 +233,12 @@ commandInput.addEventListener("keypress", (e) => {
 // VOICE TRIGGER
 // =======================
 function startVoice() {
+    const output = document.getElementById("output");
+    const wave = document.getElementById("wave");
+    const core = document.querySelector(".veda-core");
+
+    if (!output) return;
+
     if (isListening) {
         output.innerText = "⚠️ Already listening...";
         output.style.color = "#ff9800";
@@ -147,8 +250,8 @@ function startVoice() {
     output.style.color = "#00e5ff";
 
     // Add visual feedback
-    wave.classList.add("speaking");
-    core.classList.add("speaking");
+    if (wave) wave.classList.add("speaking");
+    if (core) core.classList.add("speaking");
 
     fetch("http://localhost:8000/voice")
         .then(res => {
@@ -159,8 +262,8 @@ function startVoice() {
         })
         .then(data => {
             isListening = false;
-            wave.classList.remove("speaking");
-            core.classList.remove("speaking");
+            if (wave) wave.classList.remove("speaking");
+            if (core) core.classList.remove("speaking");
 
             if (data.status === "success" && data.response) {
                 // Success - show command and response
@@ -181,8 +284,8 @@ function startVoice() {
         })
         .catch(error => {
             isListening = false;
-            wave.classList.remove("speaking");
-            core.classList.remove("speaking");
+            if (wave) wave.classList.remove("speaking");
+            if (core) core.classList.remove("speaking");
 
             console.error("❌ Voice error:", error);
             output.innerText = "❌ Connection Error\n\nPlease ensure VEDA AI server is running.";
@@ -194,6 +297,9 @@ function startVoice() {
 // VOICE CALIBRATION
 // =======================
 function calibrateMic() {
+    const output = document.getElementById("output");
+    if (!output) return;
+
     output.innerText = "🎯 Starting voice calibration...\n\n" +
         "Please remain SILENT for 3 seconds.\n" +
         "This will help VEDA AI understand your environment better.";
@@ -228,12 +334,6 @@ function calibrateMic() {
 }
 
 // =======================
-// SOUND REACTIVE SYSTEM (DISABLED TO PREVENT BLINKING)
-// =======================
-// Audio visualization removed to prevent constant blinking
-// Visual feedback is now only shown during active voice commands
-
-// =======================
 // UTILITY FUNCTIONS
 // =======================
 
@@ -250,15 +350,20 @@ function checkServerHealth() {
 }
 
 // Check health on load
-checkServerHealth();
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', checkServerHealth);
+} else {
+    checkServerHealth();
+}
 
 // Prevent page unload if listening
 window.addEventListener('beforeunload', (e) => {
     if (isListening) {
         e.preventDefault();
-        e.returnValue = '';
+        // Modern browsers ignore custom messages, just prevent default
+        return '';
     }
 });
 
 console.log("🤖 VEDA AI Frontend Initialized");
-console.log("Version: 2.0.0 (JARVIS Personality Edition)");
+console.log("Version: 2.0.0 (Cosmic Edition)");

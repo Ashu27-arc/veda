@@ -5,13 +5,6 @@ from python_backend.online_ai import chatgpt_response
 from python_backend.local_ai import local_ai_response
 from python_backend.logger import log_info, log_error, log_warning
 from python_backend.jarvis_personality import get_jarvis
-import time
-
-# Track last command and timestamp to handle repeated commands
-_last_command = None
-_last_command_time = 0
-_last_response = None
-_command_cooldown = 1.0  # 1 second cooldown - allows repeated commands after 1 second
 
 def process_command(command: str, auto_speak: bool = True):
     """Process user command and return response
@@ -20,41 +13,29 @@ def process_command(command: str, auto_speak: bool = True):
         command: User command string
         auto_speak: If True, automatically speak the response (default: True)
     """
-    global _last_command, _last_command_time, _last_response
-    
     # Get JARVIS personality instance
     jarvis = get_jarvis()
     
     if not command or not isinstance(command, str):
         return "Invalid command"
     
+    # Validate and sanitize input
+    from python_backend.utils import sanitize_input, validate_command
+    
+    command = sanitize_input(command)
+    if not validate_command(command):
+        log_warning(f"Potentially malicious command blocked: {command}")
+        return "Invalid or potentially harmful command detected"
+    
     original_command = command
     command = command.lower().strip()
     
-    # Prevent command injection
-    if any(char in command for char in [';', '&', '|', '`', '\n', '(', ')']):
-        log_warning(f"Potentially malicious command blocked: {command}")
-        return "Invalid command format"
-    
-    # Check if this is a duplicate command within cooldown period
-    current_time = time.time()
-    time_since_last = current_time - _last_command_time
-    
-    # Allow repeated commands - just log but don't block
-    if command == _last_command and time_since_last < _command_cooldown:
-        log_info(f"Repeated command detected ({time_since_last:.2f}s): {command} - Processing again")
-    
-    # Update last command tracking
-    _last_command = command
-    _last_command_time = current_time
-    
-    log_info(f"Processing command: {command} (time since last: {time_since_last:.2f}s)")
+    log_info(f"Processing command: {command}")
     
     # Handle greetings with personality
     greeting_words = ['hello', 'hi', 'hey', 'namaste', 'namaskar', 'good morning', 'good afternoon', 'good evening']
     if any(word in command for word in greeting_words):
         response = jarvis.get_greeting()
-        _last_response = response
         if auto_speak:
             speak(response)
         return response
@@ -117,7 +98,6 @@ def process_command(command: str, auto_speak: bool = True):
                 if len(cities) > 1:
                     log_info(f"Multiple cities detected: {cities} | Language: {language}")
                     response = get_weather_multiple_cities(cities, language)
-                    _last_response = response
                     if auto_speak:
                         speak(response)
                     log_info(f"Weather response: {response}")
@@ -145,7 +125,6 @@ def process_command(command: str, auto_speak: bool = True):
             log_info(f"Extracted city: '{city}' | Language: {language}")
             
             response = get_weather_by_city(city, language)
-            _last_response = response
             if auto_speak:
                 speak(response)
             log_info(f"Weather response: {response}")
@@ -156,7 +135,6 @@ def process_command(command: str, auto_speak: bool = True):
         if system_response:
             # System response already has action, just return it
             # (acknowledgment was already spoken above if it's an action command)
-            _last_response = system_response
             if auto_speak:
                 speak(system_response)
             log_info(f"System response: {system_response}")
@@ -195,9 +173,6 @@ User query: {original_command}"""
             # Add personality touch to local AI response
             if response and not response.startswith(jarvis.owner_name):
                 response = f"{jarvis.owner_name}, {response}"
-
-        # Cache the response for repeated commands
-        _last_response = response
         
         if auto_speak:
             speak(response)
@@ -206,7 +181,6 @@ User query: {original_command}"""
     except Exception as e:
         log_error(f"Error processing command: {e}")
         error_msg = "Sorry, I encountered an error processing your command."
-        _last_response = error_msg
         if auto_speak:
             speak(error_msg)
         return error_msg

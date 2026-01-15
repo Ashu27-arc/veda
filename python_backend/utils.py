@@ -14,11 +14,41 @@ def sanitize_input(text):
         return ""
     
     # Remove potentially dangerous characters
-    dangerous_chars = [';', '&', '|', '`', '$', '\n', '\r']
+    dangerous_chars = [';', '&', '|', '`', '$', '<', '>', '"', "'", '\\', '\n', '\r', '\t']
     for char in dangerous_chars:
         text = text.replace(char, '')
     
+    # Limit length
+    max_length = 500
+    if len(text) > max_length:
+        text = text[:max_length]
+    
     return text.strip()
+
+def validate_command(command):
+    """Validate command for security"""
+    if not command or not isinstance(command, str):
+        return False
+    
+    # Check length
+    if len(command) > 500:
+        return False
+    
+    # Check for malicious patterns
+    malicious_patterns = [
+        'rm -rf', 'del /f', 'format', 'mkfs',
+        'dd if=', ':(){ :|:& };:', 'fork bomb',
+        'sudo', 'chmod 777', 'wget', 'curl http',
+        'powershell -enc', 'cmd /c', 'eval(',
+        'exec(', '__import__', 'os.system'
+    ]
+    
+    command_lower = command.lower()
+    for pattern in malicious_patterns:
+        if pattern in command_lower:
+            return False
+    
+    return True
 
 def truncate_text(text, max_length=500):
     """Truncate text to maximum length"""

@@ -6,10 +6,11 @@
 ![Version](https://img.shields.io/badge/version-3.1-green?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3.8+-yellow?style=for-the-badge&logo=python)
 ![License](https://img.shields.io/badge/license-MIT-red?style=for-the-badge)
+![Security](https://img.shields.io/badge/Security-Hardened-brightgreen?style=for-the-badge)
 
 **A powerful, JARVIS-inspired AI assistant that understands both English and Hinglish**
 
-[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Commands](#-commands) • [Documentation](#-documentation)
+[Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Security](#-security) • [Documentation](#-documentation)
 
 </div>
 
@@ -18,6 +19,10 @@
 ## 🌟 Overview
 
 VEDA AI is an advanced personal AI assistant built with Python, featuring voice recognition, system control, weather updates, and intelligent conversation capabilities. Inspired by JARVIS from Iron Man, VEDA provides a professional yet friendly experience with support for both English and Hinglish (Hindi-English mix).
+
+### ⚠️ IMPORTANT SECURITY NOTICE
+
+**Version 3.1 includes critical security fixes. Please read [BUGS.md](BUGS.md) for details.**
 
 ### Why VEDA AI?
 
@@ -29,6 +34,7 @@ VEDA AI is an advanced personal AI assistant built with Python, featuring voice 
 - 🤖 **AI-Powered** - Online (OpenAI) and offline AI modes
 - 🎨 **Modern UI** - Beautiful web-based interface
 - 🔒 **Privacy-Focused** - Works offline with local AI
+- 🛡️ **Security Hardened** - Comprehensive input validation and protection
 
 ---
 
@@ -53,60 +59,20 @@ VEDA AI is an advanced personal AI assistant built with Python, featuring voice 
 - **Real-time Weather Data** - Live updates from multiple APIs
 - **Multi-City Support** - Check weather for multiple cities at once
 - **Bilingual Weather Reports** - English and Hinglish responses
-- **Detailed Information**:
-  - Temperature (°C)
-  - Feels like temperature
-  - Weather conditions
-  - Humidity levels
-  - Wind speed and direction
+- **Detailed Information**: Temperature, Humidity, Wind speed, Conditions
 
 ### 💻 System Control
-- **Application Management**:
-  - Open 20+ popular apps (Chrome, Notepad, Word, Excel, etc.)
-  - Launch websites (YouTube, Gmail, WhatsApp, etc.)
-  - File explorer and system folders
-  
-- **Volume Control**:
-  - Increase/decrease volume
-  - Mute/unmute
-  - 10% increments
-  
-- **System Operations**:
-  - Lock system
-  - Restart computer
-  - Shutdown system
-  - WiFi on/off
-  - Screenshot capture
-  
-- **System Information**:
-  - Battery status
-  - Current time
-  - Current date
-  - System health
+- **Application Management**: Open 20+ popular apps
+- **Volume Control**: Increase/decrease/mute
+- **System Operations**: Lock, Restart, Shutdown, WiFi control
+- **System Information**: Battery, Time, Date, Health
 
-### 🎮 Gesture Control (Experimental)
-- **Basic Gesture Detection** - Experimental hand detection feature
-- **MediaPipe Integration** - Uses MediaPipe for hand tracking
-- **Camera-based Control** - Webcam-based gesture detection (limited functionality)
-- **Note**: Currently in development, basic volume control only
-
-### 🔊 Wake Word Detection
-- **Always Listening Mode** - Activate with "Hey Computer"
-- **Picovoice Integration** - Efficient wake word detection
-- **Low Resource Usage** - Runs in background
-
-### 🎨 Modern Web Interface
-- **Responsive Design** - Works on all screen sizes
-- **Real-time Updates** - WebSocket-based communication
-- **Voice Visualization** - Visual feedback during voice input
-- **Settings Panel** - Customize your experience
-- **Dark Theme** - Easy on the eyes
-
-### 🔒 Security & Privacy
-- **Offline Capability** - Works without internet
-- **Local Processing** - Voice data processed locally
-- **Secure API Handling** - Environment-based configuration
-- **Input Validation** - Protection against malicious commands
+### 🔒 Security Features (NEW in v3.1)
+- **Input Sanitization** - Protection against injection attacks
+- **Command Validation** - Malicious pattern detection
+- **Secure CORS** - Restricted origins only
+- **Rate Limiting Ready** - Infrastructure for API protection
+- **Comprehensive Logging** - Security event tracking
 
 ---
 
@@ -116,7 +82,6 @@ VEDA AI is an advanced personal AI assistant built with Python, featuring voice 
 - Python 3.8 or higher
 - Windows 10/11
 - Microphone (for voice commands)
-- Webcam (optional, for gesture control)
 - Internet connection (for online features)
 
 ### Quick Install
@@ -138,7 +103,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-4. **Configure Environment Variables** (Optional)
+4. **Configure Environment Variables** (REQUIRED)
 
 Create a `.env` file in the root directory:
 ```env
@@ -147,10 +112,9 @@ OPENAI_API_KEY=your_openai_api_key_here
 
 # Picovoice Access Key (for wake word detection)
 PICOVOICE_ACCESS_KEY=your_picovoice_access_key_here
-
-# Weather API (optional - uses free APIs by default)
-WEATHER_API_KEY=your_weather_api_key_here
 ```
+
+⚠️ **SECURITY WARNING**: Never commit your `.env` file to version control!
 
 5. **Run VEDA AI**
 ```bash
@@ -174,11 +138,6 @@ The application will automatically open in your browser at `http://localhost:800
    - Click "🎤 Speak" button
    - Wait for "Listening..." message
    - Say a simple command like "Hello"
-
-3. **Set Your Name** (Optional)
-   - Go to Settings
-   - Enter your name
-   - VEDA will address you personally
 
 ### Using Voice Commands
 
@@ -204,34 +163,19 @@ The application will automatically open in your browser at `http://localhost:800
 English:
 - "open chrome" / "open notepad" / "open calculator"
 - "open word" / "open excel" / "open powerpoint"
-- "open paint" / "open file explorer"
 
 Hinglish:
 - "chrome kholo" / "notepad kholo" / "calculator kholo"
-- "word kholo" / "excel kholo" / "powerpoint kholo"
 ```
 
 #### Websites
 ```
 English:
 - "open youtube" / "open google" / "open gmail"
-- "open whatsapp" / "open facebook" / "open instagram"
-- "open twitter" / "open spotify"
+- "open whatsapp" / "open facebook"
 
 Hinglish:
 - "youtube kholo" / "google kholo" / "gmail kholo"
-- "whatsapp kholo" / "facebook kholo" / "instagram kholo"
-```
-
-#### Folders
-```
-English:
-- "open downloads" / "open documents"
-- "open pictures" / "open music" / "open videos"
-
-Hinglish:
-- "downloads kholo" / "documents kholo"
-- "pictures kholo" / "music kholo"
 ```
 
 ### 🌤️ Weather Commands
@@ -240,13 +184,11 @@ Hinglish:
 English:
 - "what's the weather?"
 - "weather in Delhi"
-- "how's the weather in Mumbai?"
 - "weather in Delhi and Mumbai"
 
 Hinglish:
 - "mausam kaisa hai?"
 - "Delhi ka mausam batao"
-- "Mumbai mein mausam check karo"
 - "Delhi aur Mumbai ka mausam"
 ```
 
@@ -259,51 +201,9 @@ English:
 - "mute volume" - Mute audio
 
 Hinglish:
-- "volume badhao" - Increase by 10%
-- "volume kam karo" - Decrease by 10%
-- "volume mute karo" - Mute audio
-```
-
-### 🔋 System Information
-
-```
-English:
-- "battery status" - Check battery level
-- "what time is it?" - Get current time
-- "what's the date?" - Get current date
-
-Hinglish:
-- "battery kitni hai?" - Check battery
-- "kitne baje hain?" - Get time
-- "aaj ki date kya hai?" - Get date
-```
-
-### 📸 System Actions
-
-```
-English:
-- "take screenshot" - Capture screen
-- "lock system" - Lock computer
-- "restart system" - Restart (5s warning)
-- "shutdown system" - Shutdown (5s warning)
-
-Hinglish:
-- "screenshot lo" - Capture screen
-- "system lock karo" - Lock computer
-- "system restart karo" - Restart
-- "computer band karo" - Shutdown
-```
-
-### 🌐 WiFi Control
-
-```
-English:
-- "wifi on" - Enable WiFi
-- "wifi off" - Disable WiFi
-
-Hinglish:
-- "wifi chalu karo" - Enable WiFi
-- "wifi band karo" - Disable WiFi
+- "volume badhao"
+- "volume kam karo"
+- "volume mute karo"
 ```
 
 ### 💬 Conversation
@@ -313,145 +213,67 @@ English:
 - "hello" / "hi" / "hey"
 - "how are you?"
 - "who are you?"
-- "what can you do?"
-- "thank you" / "thanks"
-- "bye" / "goodbye"
+- "thank you"
 
 Hinglish:
 - "namaste" / "kaise ho?"
 - "tum kaun ho?"
-- "tum kya kar sakti ho?"
-- "shukriya" / "dhanyavaad"
-- "alvida"
+- "shukriya"
 ```
 
 ---
 
-## 🏗️ Architecture
+## 🔒 Security
 
-### Technology Stack
+### Version 3.1 Security Improvements
 
-#### Backend
-- **FastAPI** - Modern web framework
-- **Python 3.8+** - Core language
-- **SpeechRecognition** - Voice input processing
-- **pyttsx3** - Text-to-speech engine
-- **OpenAI API** - Advanced AI responses
-- **MediaPipe** - Gesture recognition
-- **Picovoice** - Wake word detection
+VEDA AI v3.1 includes comprehensive security hardening:
 
-#### Frontend
-- **HTML5/CSS3** - Modern UI
-- **JavaScript** - Interactive features
-- **WebSocket** - Real-time communication
-- **Responsive Design** - Mobile-friendly
+#### ✅ Fixed Vulnerabilities
+- **Exposed API Keys** - Removed from repository
+- **Command Injection** - Comprehensive input sanitization
+- **CORS Misconfiguration** - Restricted to local origins only
+- **WebSocket Validation** - Enhanced message validation
+- **Deprecated APIs** - Updated to modern standards
 
-#### APIs & Services
-- **wttr.in** - Weather data (primary)
-- **Open-Meteo** - Weather data (backup)
-- **Google Speech API** - Voice recognition
-- **OpenAI GPT-4** - AI responses
+#### 🛡️ Security Features
+- **Input Sanitization** - Removes dangerous characters
+- **Command Validation** - Blocks malicious patterns
+- **Secure CORS** - Specific origins only
+- **Comprehensive Logging** - All security events logged
+- **Error Handling** - No sensitive information in errors
 
-### Project Structure
+### Security Best Practices
 
-```
-veda-ai/
-├── python_backend/          # Backend logic
-│   ├── main.py             # FastAPI server
-│   ├── ai_engine.py        # Command processing
-│   ├── voice.py            # Voice recognition
-│   ├── voice_advanced.py   # Advanced voice features
-│   ├── online_ai.py        # OpenAI integration
-│   ├── local_ai.py         # Offline AI
-│   ├── system_control.py   # System commands
-│   ├── weather.py          # Weather API
-│   ├── gesture_control.py  # Hand gestures
-│   ├── wake_word.py        # Wake word detection
-│   ├── jarvis_personality.py # JARVIS personality
-│   ├── settings_manager.py # Settings management
-│   ├── logger.py           # Logging system
-│   └── config.py           # Configuration
-│
-├── python_frontend/         # Frontend UI
-│   ├── index.html          # Main page
-│   ├── app.js              # JavaScript logic
-│   ├── style.css           # Styling
-│   ├── assets/             # Images & icons
-│   └── sounds/             # Audio files
-│
-├── data/                    # User data
-│   ├── settings.json       # User settings
-│   ├── history.json        # Command history
-│   └── voice_profile.json  # Voice calibration
-│
-├── logs/                    # Application logs
-│   ├── veda_ai.log         # Main log
-│   └── jarvis.log          # JARVIS log
-│
-├── tests/                   # Test files
-│   └── test_commands.py    # Command tests
-│
-├── .env                     # Environment variables
-├── requirements.txt         # Python dependencies
-├── run_veda_ai.py          # Main entry point
-├── auto_start.py           # Auto-start script
-├── calibrate_voice.py      # Voice calibration
-├── tray.py                 # System tray app
-└── README.md               # This file
-```
+1. **Never commit `.env` file**
+   ```bash
+   # Verify it's in .gitignore
+   cat .gitignore | grep .env
+   ```
 
----
+2. **Use strong API keys**
+   - Generate new keys from official dashboards
+   - Rotate keys regularly
+   - Never share keys publicly
 
-## 🔧 Configuration
+3. **Keep dependencies updated**
+   ```bash
+   pip install -r requirements.txt --upgrade
+   ```
 
-### Settings File (`data/settings.json`)
+4. **Review logs regularly**
+   ```bash
+   type logs\veda_ai.log
+   ```
 
-```json
-{
-  "owner_name": "Sir",
-  "ai_mode": "online",
-  "voice_enabled": true,
-  "wake_word_enabled": false,
-  "gesture_control_enabled": false,
-  "language": "en",
-  "theme": "dark",
-  "voice_rate": 175,
-  "voice_volume": 1.0
-}
-```
+### Reporting Security Issues
 
-### Environment Variables (`.env`)
+If you discover a security vulnerability:
+1. **DO NOT** create a public issue
+2. Email: security@veda-ai.com (if available)
+3. Or create a private security advisory on GitHub
 
-```env
-# AI Configuration
-OPENAI_API_KEY=sk-...
-AI_MODE=online
-
-# Wake Word
-PICOVOICE_ACCESS_KEY=...
-
-# Weather (optional)
-WEATHER_API_KEY=...
-
-# Logging
-LOG_LEVEL=INFO
-```
-
----
-
-## 📊 Performance
-
-### Voice Recognition
-- **Accuracy**: 90-95% (after calibration)
-- **Response Time**: 2-5 seconds
-- **Languages**: English, Hindi, Hinglish
-- **Noise Handling**: Automatic ambient noise adjustment
-
-### System Requirements
-- **CPU**: Minimal usage (<5%)
-- **RAM**: ~200MB
-- **Storage**: ~500MB (with dependencies)
-- **Network**: Optional (for online features)
+For detailed security information, see [BUGS.md](BUGS.md)
 
 ---
 
@@ -461,74 +283,28 @@ LOG_LEVEL=INFO
 
 #### Quick Fix (Recommended)
 ```bash
-# Run the automatic fix tool
 python fix_microphone.py
 ```
 
-This will:
-- ✅ Detect your microphone
-- ✅ Test microphone access
-- ✅ Calibrate for your environment
-- ✅ Test voice recognition
-- ✅ Save optimal settings
-
-#### Manual Troubleshooting
-
-1. **Test Microphone**
-   ```bash
-   # Run comprehensive microphone test
-   python test_microphone.py
-   ```
-   This will diagnose all microphone issues and provide specific solutions.
+#### Manual Steps
+1. **Check Microphone Permissions**
+   - Windows Settings > Privacy > Microphone
+   - Enable "Allow apps to access your microphone"
 
 2. **Calibrate Voice**
-   - Click "🎯 Calibrate Voice" button in UI
+   - Click "🎯 Calibrate Voice" button
    - OR run: `python calibrate_voice.py`
-   - Stay silent for 3 seconds during calibration
-   
-3. **Check Microphone Permissions**
-   - Open Windows Settings > Privacy > Microphone
-   - Enable "Allow apps to access your microphone"
-   - Enable "Allow desktop apps to access your microphone"
-   - Ensure Python is allowed
 
-4. **Check Microphone Connection**
-   - Ensure microphone is properly connected
-   - Try a different USB port
-   - Check if microphone works in other apps (Discord, Zoom)
-   - Close other apps using microphone
-
-5. **Adjust Microphone Settings**
-   - Right-click speaker icon in taskbar
-   - Select "Sounds" > "Recording" tab
-   - Select your microphone > "Properties"
-   - Set level to 80-100%
-   - Ensure microphone is not muted
-
-6. **Internet Connection**
-   - Voice recognition requires internet
-   - Check your connection
-   - Try: `ping google.com`
-
-7. **Speak Clearly**
-   - Speak at normal pace
-   - Reduce background noise
-   - Position microphone 6-12 inches from mouth
-   - Speak louder if needed
+3. **Test Microphone**
+   ```bash
+   python test_microphone.py
+   ```
 
 ### Commands Not Recognized?
 
-1. **Check Internet Connection**
-   - Voice recognition requires internet
-   - Weather features need internet
-   
-2. **Try Text Commands**
-   - Type commands instead of speaking
-   - Verify command syntax
-
-3. **Check Logs**
-   - View `logs/veda_ai.log` for errors
-   - Look for error messages
+1. **Check Internet Connection** - Voice recognition requires internet
+2. **Try Text Commands** - Verify VEDA is working
+3. **Check Logs** - View `logs/veda_ai.log` for errors
 
 ### Application Won't Start?
 
@@ -544,7 +320,6 @@ This will:
 
 3. **Port Already in Use**
    ```bash
-   # Use different port
    python run_veda_ai.py --port 8001
    ```
 
@@ -552,32 +327,69 @@ This will:
 
 ## 📚 Documentation
 
+- **[BUGS.md](BUGS.md)** - Security audit and bug fixes (READ THIS FIRST!)
 - **[HOW_TO_USE_VEDA.md](HOW_TO_USE_VEDA.md)** - Detailed usage guide (Hinglish)
 - **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Deployment instructions
+- **[SYSTEM_COMMANDS_REFERENCE.md](SYSTEM_COMMANDS_REFERENCE.md)** - Complete command list
+- **[SYSTEM_CONTROL_GUIDE.md](SYSTEM_CONTROL_GUIDE.md)** - System control guide
+- **[VEDA_AI_COMPLETE_GUIDE.md](VEDA_AI_COMPLETE_GUIDE.md)** - Complete documentation
 - **API Documentation** - Available at `/docs` when running
+
+---
+
+## 🏗️ Architecture
+
+### Technology Stack
+
+#### Backend
+- **FastAPI** - Modern web framework
+- **Python 3.8+** - Core language
+- **SpeechRecognition** - Voice input processing
+- **pyttsx3** - Text-to-speech engine
+- **OpenAI API** - Advanced AI responses
+
+#### Frontend
+- **HTML5/CSS3** - Modern UI
+- **JavaScript** - Interactive features
+- **WebSocket** - Real-time communication
+
+#### Security
+- **Input Sanitization** - Protection against injection
+- **Command Validation** - Malicious pattern detection
+- **Secure CORS** - Restricted origins
+- **Comprehensive Logging** - Security event tracking
+
+---
+
+## 📊 Performance
+
+### Voice Recognition
+- **Accuracy**: 90-95% (after calibration)
+- **Response Time**: 2-5 seconds
+- **Languages**: English, Hindi, Hinglish
+
+### System Requirements
+- **CPU**: Minimal usage (<5%)
+- **RAM**: ~200MB
+- **Storage**: ~500MB (with dependencies)
+- **Network**: Optional (for online features)
 
 ---
 
 ## 🛣️ Roadmap
 
 ### Upcoming Features
-
-- [ ] **Advanced Gesture Controls** - Full hand gesture system for system control
 - [ ] Mobile app (Android/iOS)
-- [ ] Multi-language support (Spanish, French, etc.)
-- [ ] Custom wake word training
+- [ ] Multi-language support
 - [ ] Smart home integration
 - [ ] Calendar and reminder system
-- [ ] Email management
-- [ ] Music player control
 - [ ] Voice authentication
 - [ ] Cloud sync
 
 ### Known Limitations
-
-- **Gesture Control**: Currently experimental with limited functionality (basic volume control only)
-- **Wake Word**: Requires Picovoice API key for "Hey Computer" activation
-- **Voice Recognition**: Requires internet connection for best accuracy
+- **Gesture Control**: Experimental (basic functionality only)
+- **Wake Word**: Requires Picovoice API key
+- **Voice Recognition**: Requires internet for best accuracy
 - **System Commands**: Windows-only (Linux/Mac support planned)
 
 ---
@@ -618,18 +430,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 👨‍💻 Author
-
-Created with ❤️ by [Your Name]
-
----
-
 ## 🙏 Acknowledgments
 
 - **OpenAI** - For GPT-4 API
 - **Google** - For Speech Recognition API
 - **Picovoice** - For wake word detection
-- **MediaPipe** - For gesture recognition
 - **FastAPI** - For the amazing web framework
 - **Iron Man** - For JARVIS inspiration
 
@@ -638,14 +443,27 @@ Created with ❤️ by [Your Name]
 ## 📞 Support
 
 - **Issues**: [GitHub Issues](https://github.com/yourusername/veda-ai/issues)
-- **Email**: your.email@example.com
+- **Security**: See [BUGS.md](BUGS.md) for security reporting
 - **Documentation**: [Wiki](https://github.com/yourusername/veda-ai/wiki)
 
 ---
 
-## ⭐ Star History
+## ⚠️ Important Notes
 
-If you find VEDA AI helpful, please consider giving it a star! ⭐
+### Security
+- **NEVER** commit your `.env` file
+- **ALWAYS** use environment variables for secrets
+- **REVIEW** [BUGS.md](BUGS.md) for security information
+- **UPDATE** dependencies regularly
+
+### API Keys
+- Get OpenAI API key from: https://platform.openai.com/api-keys
+- Get Picovoice key from: https://console.picovoice.ai/
+
+### System Commands
+- Some commands require administrator privileges
+- Shutdown/Restart commands have 5-second warnings
+- WiFi control requires admin rights
 
 ---
 
@@ -655,7 +473,8 @@ If you find VEDA AI helpful, please consider giving it a star! ⭐
 
 **VEDA AI - Your Intelligent Bilingual Assistant**
 
+**Version 3.1 - Security Hardened**
+
 [⬆ Back to Top](#-veda-ai---your-intelligent-bilingual-assistant)
 
 </div>
-# veda

@@ -3,30 +3,116 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>VEDA AI</title>
+  <title>VEDA - Your Intelligent Assistant</title>
   <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>" />
 </head>
 <body>
-  <!-- Voice Wave Animation - Top -->
-  <div class="voice-wave" id="wave">
-    <span></span><span></span><span></span><span></span><span></span>
+  <!-- Cosmic Background -->
+  <div class="cosmic-bg">
+    <canvas id="stars"></canvas>
+    <div class="nebula"></div>
   </div>
 
+  <!-- Main Container -->
   <div class="veda-container">
+    <!-- Central Logo System -->
     <div class="veda-core">
-      <div class="ring"></div>
-      <div class="ring ring2"></div>
-      <div class="ring ring3"></div>
-      <div class="center">VEDA AI</div>
+      <!-- Outer Rings -->
+      <div class="tech-ring ring-outer">
+        <div class="ring-segment"></div>
+        <div class="ring-segment"></div>
+        <div class="ring-segment"></div>
+        <div class="ring-segment"></div>
+      </div>
+      <div class="tech-ring ring-middle"></div>
+      <div class="tech-ring ring-inner"></div>
+      
+      <!-- Central Logo -->
+      <div class="logo-container">
+        <svg class="veda-logo" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <!-- Lotus Petals -->
+          <g class="lotus">
+            <path d="M100,60 Q90,50 85,45 Q90,50 100,55 Z" fill="url(#cyan-gradient)" opacity="0.8"/>
+            <path d="M100,60 Q110,50 115,45 Q110,50 100,55 Z" fill="url(#cyan-gradient)" opacity="0.8"/>
+            <path d="M100,55 Q85,45 75,40 Q85,48 100,50 Z" fill="url(#cyan-gradient)" opacity="0.6"/>
+            <path d="M100,55 Q115,45 125,40 Q115,48 100,50 Z" fill="url(#cyan-gradient)" opacity="0.6"/>
+            <ellipse cx="100" cy="50" rx="8" ry="12" fill="url(#white-gradient)"/>
+          </g>
+          
+          <!-- V Symbol -->
+          <g class="v-symbol">
+            <path d="M70,80 L100,140 L130,80" stroke="url(#cyan-gradient)" stroke-width="6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M75,85 L100,135 L125,85" stroke="url(#cyan-gradient)" stroke-width="3" fill="none" opacity="0.6"/>
+          </g>
+          
+          <!-- Gradients -->
+          <defs>
+            <linearGradient id="cyan-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#00ffff;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#00e5ff;stop-opacity:1" />
+            </linearGradient>
+            <linearGradient id="white-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" style="stop-color:#ffffff;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#00ffff;stop-opacity:0.8" />
+            </linearGradient>
+          </defs>
+        </svg>
+        
+        <!-- Vertical Light Beam -->
+        <div class="light-beam"></div>
+      </div>
+      
+      <!-- Particle Effects -->
+      <div class="particles">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
     </div>
 
-    <div class="panel">
-      <div id="output">Waiting for command...</div>
-      <input id="command" placeholder="Type command..." />
-      <button onclick="sendCommand()">SEND</button>
-      <button onclick="startVoice()">🎤 Speak</button>
-      <button onclick="calibrateMic()" style="background: #ff9800;">🎯 Calibrate Voice</button>
+    <!-- VEDA Title -->
+    <div class="veda-title">
+      <h1>VEDA</h1>
+      <p class="subtitle">YOUR INTELLIGENT ASSISTANT</p>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+      <div class="panel-header">
+        <div class="status-indicator"></div>
+        <span class="status-text">SYSTEM ONLINE</span>
+      </div>
+      
+      <div class="output-container">
+        <div id="output">Initializing VEDA AI...</div>
+      </div>
+      
+      <div class="input-group">
+        <input id="command" placeholder="Enter command..." />
+        <button class="btn-primary" onclick="sendCommand()">
+          <span>EXECUTE</span>
+        </button>
+      </div>
+      
+      <div class="action-buttons">
+        <button class="btn-voice" onclick="startVoice()">
+          <span class="btn-icon">🎤</span>
+          <span>VOICE INPUT</span>
+        </button>
+        <button class="btn-calibrate" onclick="calibrateMic()">
+          <span class="btn-icon">🎯</span>
+          <span>CALIBRATE</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Voice Wave Indicator -->
+    <div class="voice-wave" id="wave">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span><span></span>
     </div>
   </div>
 
