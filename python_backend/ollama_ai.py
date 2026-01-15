@@ -5,50 +5,65 @@ Models: llama2, mistral, codellama, etc.
 """
 import requests
 import json
-from python_backend.logger import log_error, log_info
+from python_backend.logger import log_error, log_info, log_warning
+from python_backend.config import OLLAMA_API_URL as CONFIG_OLLAMA_URL, OLLAMA_MODEL, OLLAMA_TIMEOUT, OLLAMA_MAX_RETRIES
 
-OLLAMA_API_URL = "http://localhost:11434/api/generate"
-DEFAULT_MODEL = "llama2"  # You can change to mistral, codellama, etc.
+OLLAMA_API_URL = CONFIG_OLLAMA_URL + "/api/generate"
+DEFAULT_MODEL = OLLAMA_MODEL
+MAX_RETRIES = OLLAMA_MAX_RETRIES
 
 def ollama_response(prompt, model=DEFAULT_MODEL):
-    """Get response from local Ollama model"""
-    try:
-        # Detect language
-        is_hindi = any(word in prompt.lower() for word in ['kya', 'kaise', 'kaun', 'kab', 'kahan', 'mujhe', 'aap', 'tum', 'hai', 'ho'])
-        
-        system_prompt = """You are VEDA AI, a friendly AI assistant. 
-        - Keep responses short (2-3 sentences)
-        - Be conversational and helpful
-        - If user speaks Hindi/Hinglish, respond in Hinglish
-        """
-        
-        full_prompt = f"{system_prompt}\n\nUser: {prompt}\nVEDA:"
-        
-        payload = {
-            "model": model,
-            "prompt": full_prompt,
-            "stream": False,
-            "options": {
-                "temperature": 0.7,
-                "num_predict": 150
-            }
+    """Get response from local Ollama model with retry logic"""
+    # Detect language
+    is_hindi = any(word in prompt.lower() for word in ['kya', 'kaise', 'kaun', 'kab', 'kahan', 'mujhe', 'aap', 'tum', 'hai', 'ho'])
+    
+    system_prompt = """You are VEDA AI, a friendly AI assistant. 
+    - Keep responses short (2-3 sentences)
+    - Be conversational and helpful
+    - If user speaks Hindi/Hinglish, respond in Hinglish
+    """
+    
+    full_prompt = f"{system_prompt}\n\nUser: {prompt}\nVEDA:"
+    
+    payload = {
+        "model": model,
+        "prompt": full_prompt,
+        "stream": False,
+        "options": {
+            "temperature": 0.7,
+            "num_predict": 150
         }
-        
-        response = requests.post(OLLAMA_API_URL, json=payload, timeout=30)
-        
-        if response.status_code == 200:
-            result = response.json()
-            return result.get("response", "").strip()
-        else:
-            log_error(f"Ollama API error: {response.status_code}")
+    }
+    
+    # Retry logic for timeout errors
+    for attempt in range(MAX_RETRIES + 1):
+        try:
+            response = requests.post(OLLAMA_API_URL, json=payload, timeout=OLLAMA_TIMEOUT)
+            
+            if response.status_code == 200:
+                result = response.json()
+                return result.get("response", "").strip()
+            else:
+                log_error(f"Ollama API error: {response.status_code}")
+                return None
+                
+        except requests.exceptions.Timeout:
+            if attempt < MAX_RETRIES:
+                log_warning(f"Ollama timeout (attempt {attempt + 1}/{MAX_RETRIES + 1}), retrying...")
+                continue
+            else:
+                log_error(f"Ollama timeout after {MAX_RETRIES + 1} attempts. Consider increasing OLLAMA_TIMEOUT or using a faster model.")
+                return None
+                
+        except requests.exceptions.ConnectionError:
+            log_error("Ollama not running. Start with: ollama serve")
             return None
             
-    except requests.exceptions.ConnectionError:
-        log_error("Ollama not running. Start with: ollama serve")
-        return None
-    except Exception as e:
-        log_error(f"Ollama error: {e}")
-        return None
+        except Exception as e:
+            log_error(f"Ollama error: {e}")
+            return None
+    
+    return None
 
 def train_ollama_model(training_data_file, model_name="veda-custom"):
     """
