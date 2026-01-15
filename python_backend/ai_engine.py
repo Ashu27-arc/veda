@@ -1,10 +1,88 @@
-from python_backend.system_control import handle_system_command
+from python_backend.system_control import handle_system_command, open_application, close_application
 from python_backend.voice import speak
 from python_backend.utils import is_online
 from python_backend.online_ai import chatgpt_response
 from python_backend.local_ai import local_ai_response
 from python_backend.logger import log_info, log_error, log_warning
 from python_backend.jarvis_personality import get_jarvis
+import subprocess
+import os
+import webbrowser
+
+def execute_direct_action(command: str):
+    """Execute direct action commands that weren't caught by system_control"""
+    jarvis = get_jarvis()
+    command_lower = command.lower().strip()
+    
+    try:
+        # Enhanced command parsing for natural language
+        log_info(f"Parsing direct action: {command_lower}")
+        
+        # Common Hindi/Hinglish patterns
+        hinglish_patterns = {
+            'kholo': 'open',
+            'band': 'close',
+            'chalu': 'start',
+            'shuru': 'start',
+            'karo': 'do',
+            'dijiye': 'please',
+            'kripya': 'please'
+        }
+        
+        # Normalize command
+        normalized_command = command_lower
+        for hindi, english in hinglish_patterns.items():
+            normalized_command = normalized_command.replace(hindi, english)
+        
+        # Extract app/action name by removing trigger words
+        app_name = normalized_command
+        trigger_words = ['open', 'start', 'launch', 'run', 'close', 'stop', 'exit', 'quit',
+                        'do', 'please', 'karo', 'kar', 'dijiye', 'kripya']
+        
+        for word in trigger_words:
+            app_name = app_name.replace(word, '')
+        
+        app_name = app_name.strip()
+        
+        # Determine action type
+        is_open = any(word in normalized_command for word in ['open', 'start', 'launch', 'run'])
+        is_close = any(word in normalized_command for word in ['close', 'stop', 'exit', 'quit'])
+        
+        # If we have an app name, try to execute action
+        if app_name and len(app_name) > 1:
+            log_info(f"Executing action for: {app_name} (open={is_open}, close={is_close})")
+            
+            if is_open:
+                # Try opening as application
+                result = open_application(app_name)
+                if result and "couldn't find" not in result.lower():
+                    return result
+                
+                # Try as system command
+                try:
+                    subprocess.Popen(app_name)
+                    return f"Executing {app_name}, {jarvis.owner_name}."
+                except:
+                    pass
+                
+                # Try with .exe extension
+                try:
+                    subprocess.Popen(f"{app_name}.exe")
+                    return f"Opening {app_name}, {jarvis.owner_name}."
+                except:
+                    pass
+            
+            elif is_close:
+                # Try closing the application
+                result = close_application(app_name)
+                if result:
+                    return result
+        
+        return None
+        
+    except Exception as e:
+        log_error(f"Direct action error: {e}")
+        return None
 
 def process_command(command: str, auto_speak: bool = True):
     """Process user command and return response
@@ -130,7 +208,7 @@ def process_command(command: str, auto_speak: bool = True):
             log_info(f"Weather response: {response}")
             return response
         
-        # 2️⃣ SYSTEM COMMAND
+        # 2️⃣ SYSTEM COMMAND - Enhanced execution
         system_response = handle_system_command(command)
         if system_response:
             # System response already has action, just return it
@@ -139,6 +217,17 @@ def process_command(command: str, auto_speak: bool = True):
                 speak(system_response)
             log_info(f"System response: {system_response}")
             return system_response
+        
+        # 2.5️⃣ DIRECT ACTION COMMANDS - If no system response, try to execute as action
+        # This handles commands like "chrome kholo", "notepad open karo", etc.
+        if is_action_command:
+            # Try to extract and execute the command
+            action_response = execute_direct_action(command)
+            if action_response:
+                if auto_speak:
+                    speak(action_response)
+                log_info(f"Direct action executed: {action_response}")
+                return action_response
 
         # 3️⃣ AI MODE - Add personality layer
         response = None

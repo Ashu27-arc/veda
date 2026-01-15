@@ -29,10 +29,14 @@ def start_backend():
 
 def open_ui():
     """Open UI in browser after delay"""
-    time.sleep(3)
+    time.sleep(5)  # Increased delay to ensure server is fully ready
+    print("🌐 Opening VEDA AI in browser...")
     webbrowser.open("http://localhost:8000")
 
 if __name__ == "__main__":
+    print("🚀 Starting VEDA AI...")
+    print("⏳ Please wait while the server initializes...")
+    
     # Start backend server
     threading.Thread(target=start_backend, daemon=True).start()
     
@@ -41,6 +45,11 @@ if __name__ == "__main__":
     
     # Open UI
     open_ui()
+    
+    print("✅ VEDA AI is running!")
+    print("🌐 Browser should open automatically at http://localhost:8000")
+    print("📝 If browser doesn't open, manually visit: http://localhost:8000")
+    print("⏹️  Press Ctrl+C to stop")
     
     # Keep main thread alive
     try:

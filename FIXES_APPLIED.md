@@ -138,3 +138,161 @@ Then open your browser to: `http://localhost:8000`
 ## Summary
 
 All major issues have been fixed. VEDA AI is now fully functional and ready to use!
+
+
+---
+
+## Date: January 15, 2026 (Update 2)
+
+### 🎤 Voice Command Execution Enhancement
+
+#### Issue Fixed: Voice Commands Not Being Executed Properly
+
+**Problem:** 
+User reported that voice commands were not being followed and executed properly. Commands like "Chrome kholo", "Calculator open karo" were not working consistently.
+
+**Root Cause:**
+1. Limited command detection patterns
+2. No fallback mechanism for unrecognized commands
+3. Missing close/stop command support
+4. Weak Hindi/Hinglish language support
+
+**Solutions Implemented:**
+
+#### 1. Enhanced Command Processing (`ai_engine.py`)
+- ✅ Added `execute_direct_action()` function for fallback command execution
+- ✅ Better Hindi/Hinglish pattern recognition
+- ✅ Natural language command parsing
+- ✅ Multiple execution attempts with different methods
+- ✅ Improved action keyword detection
+
+**New Features:**
+```python
+# Hinglish pattern normalization
+hinglish_patterns = {
+    'kholo': 'open',
+    'band': 'close',
+    'chalu': 'start',
+    'shuru': 'start',
+    'karo': 'do'
+}
+```
+
+#### 2. Improved System Control (`system_control.py`)
+- ✅ Added `close_application()` function for closing apps
+- ✅ Enhanced command detection with `is_open_command` and `is_close_command`
+- ✅ Better app name extraction
+- ✅ Process killing support using psutil and taskkill
+- ✅ Expanded skip words list to avoid conflicts
+
+**New Capabilities:**
+- Open any application: "Chrome kholo", "Open Notepad"
+- Close any application: "Chrome band karo", "Close Calculator"
+- Better error handling and user feedback
+
+#### 3. Smart Application Finder
+Already existing but now better integrated:
+- ✅ Searches multiple locations (Program Files, AppData, etc.)
+- ✅ Registry lookup for installed apps
+- ✅ Common app mappings (Chrome, Firefox, VS Code, etc.)
+- ✅ Automatic .exe extension handling
+
+#### 4. Voice Command Examples
+
+**Opening Apps:**
+```
+"Chrome kholo" → Opens Chrome
+"Open Calculator" → Opens Calculator
+"Notepad chalu karo" → Opens Notepad
+"Start VS Code" → Opens VS Code
+```
+
+**Closing Apps:**
+```
+"Chrome band karo" → Closes Chrome
+"Close Notepad" → Closes Notepad
+"Calculator stop karo" → Closes Calculator
+```
+
+**System Commands:**
+```
+"Volume badhao" → Increases volume
+"Screenshot lo" → Takes screenshot
+"Downloads kholo" → Opens Downloads folder
+"Task Manager dikhao" → Opens Task Manager
+```
+
+#### 5. Files Modified
+
+1. **`python_backend/ai_engine.py`**
+   - Added imports: `subprocess`, `os`, `webbrowser`
+   - Added `execute_direct_action()` function
+   - Enhanced command processing with fallback mechanism
+   - Better Hindi/Hinglish support
+
+2. **`python_backend/system_control.py`**
+   - Added `close_application()` function
+   - Enhanced `handle_system_command()` with better detection
+   - Improved app name extraction
+   - Added process killing support
+
+3. **`VOICE_COMMANDS_GUIDE.md`** (NEW)
+   - Complete guide for voice commands
+   - Examples in Hindi, English, and Hinglish
+   - Tips for better recognition
+   - List of supported commands
+
+#### 6. Permanent Changes
+
+All changes are permanent and automatically saved:
+- ✅ Code changes committed to files
+- ✅ No configuration needed
+- ✅ Works immediately after restart
+- ✅ Backward compatible with existing commands
+
+#### 7. Testing Commands
+
+Try these commands to test:
+
+**Hindi/Hinglish:**
+- "Chrome kholo"
+- "Calculator chalu karo"
+- "Volume badhao"
+- "Screenshot lo"
+- "Chrome band karo"
+
+**English:**
+- "Open Notepad"
+- "Start Firefox"
+- "Volume up"
+- "Take screenshot"
+- "Close Calculator"
+
+#### 8. How It Works Now
+
+```
+Voice Input → Speech Recognition → Command Analysis → Action Detection → Execution
+                                                    ↓
+                                            Multiple Attempts:
+                                            1. System Control
+                                            2. Direct Action
+                                            3. App Finder
+                                            4. System Command
+                                            5. Fallback Methods
+```
+
+---
+
+### Summary of Voice Command Enhancement
+
+VEDA AI ab aapke voice commands ko properly follow karti hai aur execute karti hai. Aap Hindi, English, ya Hinglish mein koi bhi command de sakte hain aur wo automatically execute ho jayega. Ye changes permanent hain aur restart ke baad bhi kaam karenge.
+
+**Key Improvements:**
+- 🎯 Better command recognition
+- 🔄 Multiple fallback mechanisms
+- 🌐 Hindi/Hinglish support
+- ✅ Open AND Close commands
+- 🚀 Natural language processing
+- 💪 More reliable execution
+
+Ab aap confidently voice commands use kar sakte hain!

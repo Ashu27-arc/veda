@@ -156,6 +156,49 @@ def open_application(app_name):
             return f"{jarvis.owner_name}, I couldn't find {app_name} on your system."
 
 
+def close_application(app_name):
+    """
+    Close/kill an application by name
+    """
+    jarvis = get_jarvis()
+    
+    try:
+        # Get the process name
+        process_name = app_name.lower().strip()
+        
+        # Add .exe if not present
+        if not process_name.endswith('.exe'):
+            process_name = f"{process_name}.exe"
+        
+        # Try to kill the process
+        killed = False
+        for proc in psutil.process_iter(['name']):
+            try:
+                if proc.info['name'].lower() == process_name:
+                    proc.kill()
+                    killed = True
+                    log_info(f"Killed process: {process_name}")
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                continue
+        
+        if killed:
+            return f"Closed {app_name}, {jarvis.owner_name}."
+        else:
+            # Try using taskkill command
+            result = subprocess.run(['taskkill', '/F', '/IM', process_name], 
+                                  capture_output=True, text=True)
+            if result.returncode == 0:
+                log_info(f"Closed {app_name} using taskkill")
+                return f"Closed {app_name}, {jarvis.owner_name}."
+            else:
+                log_warning(f"Could not find running process: {app_name}")
+                return f"{jarvis.owner_name}, {app_name} is not running."
+                
+    except Exception as e:
+        log_error(f"Error closing {app_name}: {e}")
+        return f"{jarvis.owner_name}, I couldn't close {app_name}."
+
+
 # =========================
 # VOLUME CONTROL
 # =========================
@@ -232,6 +275,11 @@ def handle_system_command(command):
         command = command.lower().strip()
         
         log_info(f"System control checking command: {command}")
+        
+        # ---- ENHANCED COMMAND DETECTION ----
+        # Detect if this is an action command (open/close/start/stop)
+        is_open_command = any(word in command for word in ['open', 'kholo', 'start', 'chalu', 'launch', 'run', 'shuru'])
+        is_close_command = any(word in command for word in ['close', 'band', 'stop', 'exit', 'quit'])
         
         # ---- WEBSITES ----
         if any(site in command for site in ['youtube', 'google', 'gmail', 'facebook', 'instagram', 
@@ -486,12 +534,13 @@ def handle_system_command(command):
 
         # ---- GENERIC APP OPENER (MOST POWERFUL) ----
         # This will handle ANY app request
-        if any(word in command for word in ['open', 'kholo', 'start', 'chalu', 'launch', 'run']):
+        if is_open_command or is_close_command:
             # Extract app name
             app_name = command
             
             # Remove trigger words
-            for word in ['open', 'kholo', 'start', 'chalu', 'launch', 'run', 'karo', 'kar', 'do']:
+            for word in ['open', 'kholo', 'start', 'chalu', 'launch', 'run', 'karo', 'kar', 'do', 
+                        'close', 'band', 'stop', 'exit', 'quit', 'please', 'kripya', 'karo', 'dijiye']:
                 app_name = app_name.replace(word, '')
             
             app_name = app_name.strip()
@@ -501,13 +550,21 @@ def handle_system_command(command):
                          'downloads', 'documents', 'pictures', 'music', 'videos', 'desktop',
                          'explorer', 'computer', 'settings', 'control panel', 'task manager',
                          'this pc', 'my computer', 'recycle bin', 'command prompt', 'powershell',
-                         'wifi', 'volume', 'screenshot', 'battery', 'lock', 'restart', 'shutdown']
+                         'wifi', 'volume', 'screenshot', 'battery', 'lock', 'restart', 'shutdown',
+                         'weather', 'mausam', 'time', 'date']
             
-            if app_name and len(app_name) > 2 and not any(skip in app_name for skip in skip_words):
-                log_info(f"Attempting to open application: {app_name}")
-                result = open_application(app_name)
-                if result:
-                    return result
+            if app_name and len(app_name) > 1 and not any(skip in app_name for skip in skip_words):
+                log_info(f"Attempting to open/close application: {app_name}")
+                
+                if is_open_command:
+                    result = open_application(app_name)
+                    if result:
+                        return result
+                elif is_close_command:
+                    # Try to close the application
+                    result = close_application(app_name)
+                    if result:
+                        return result
 
     except Exception as e:
         log_error(f"System command error: {e}")
