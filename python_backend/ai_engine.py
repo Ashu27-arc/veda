@@ -249,19 +249,19 @@ def process_command(command: str, auto_speak: bool = True):
         # 4️⃣ AI RESPONSE - Multiple options (priority order)
         response = None
         
-        # Try Ollama first (best for self-training)
+        # Try LM Studio first (best for self-training)
         try:
-            from python_backend.ollama_ai import ollama_response
-            from python_backend.config import OLLAMA_MODEL
-            response = ollama_response(command, model=OLLAMA_MODEL)
+            from python_backend.lm_studio_ai import lm_studio_response
+            from python_backend.config import LM_STUDIO_MODEL
+            response = lm_studio_response(command, model=LM_STUDIO_MODEL)
             if response:
-                log_info(f"Using Ollama model: {OLLAMA_MODEL}")
+                log_info(f"Using LM Studio model: {LM_STUDIO_MODEL}")
         except ImportError:
-            log_info("Ollama not available")
+            log_info("LM Studio not available")
         except Exception as e:
-            log_error(f"Ollama error: {e}")
+            log_error(f"LM Studio error: {e}")
         
-        # Try Hugging Face if Ollama fails
+        # Try Hugging Face if LM Studio fails
         if not response:
             try:
                 from python_backend.huggingface_ai import huggingface_response

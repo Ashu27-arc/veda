@@ -3,6 +3,7 @@ import threading
 import webbrowser
 import time
 import sys
+import requests
 
 def start_wake():
     """Start wake word detection in background"""
@@ -27,21 +28,43 @@ def start_backend():
         "--reload"
     ])
 
+def wait_for_server():
+    """Wait for server to be fully ready"""
+    import requests
+    max_attempts = 30
+    for i in range(max_attempts):
+        try:
+            response = requests.get("http://localhost:8000/health", timeout=1)
+            if response.status_code == 200:
+                print("✅ Server is ready!")
+                return True
+        except:
+            pass
+        time.sleep(0.5)
+    return False
+
 def open_ui():
-    """Open UI in browser after delay"""
-    time.sleep(5)  # Increased delay to ensure server is fully ready
+    """Open UI in browser after server is ready"""
+    print("⏳ Waiting for server to be ready...")
+    
+    if not wait_for_server():
+        print("⚠️ Server took too long to start. Please manually open: http://localhost:8000")
+        return
+    
     print("🌐 Opening VEDA AI in browser...")
     
     # Try multiple methods to open browser
     try:
         # Method 1: Default browser
         webbrowser.open("http://localhost:8000")
+        print("✅ Browser opened successfully!")
     except Exception as e:
         print(f"⚠️ Default browser failed: {e}")
         try:
             # Method 2: Windows specific
             import os
             os.system("start http://localhost:8000")
+            print("✅ Browser opened using Windows command!")
         except Exception as e2:
             print(f"⚠️ Windows start failed: {e2}")
             print("📝 Please manually open: http://localhost:8000")

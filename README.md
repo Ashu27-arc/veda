@@ -1,180 +1,216 @@
-# 🤖 VEDA AI - Advanced Automated Intelligent Assistant
+# 🤖 VEDA AI - Your Intelligent Assistant
 
 ![VEDA AI](https://img.shields.io/badge/VEDA-AI%20Assistant-blue?style=for-the-badge)
 ![Version](https://img.shields.io/badge/version-5.0-green?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3.8+-yellow?style=for-the-badge&logo=python)
-![License](https://img.shields.io/badge/license-MIT-red?style=for-the-badge)
-![AI](https://img.shields.io/badge/AI-Automated-purple?style=for-the-badge)
+![AI](https://img.shields.io/badge/AI-LM%20Studio-purple?style=for-the-badge)
 
-**A powerful, JARVIS-inspired AI assistant with advanced automation and self-training capabilities - No OpenAI required!**
-
----
-
-## 🎯 What's New in v5.0 - AUTOMATION EDITION
-
-### 🤖 Advanced Automation System
-- **⚙️ Task Scheduler** - Schedule tasks daily, weekly, or at intervals
-- **💡 Proactive Suggestions** - AI suggests actions based on context
-- **🧠 Context Awareness** - Learns your patterns and predicts needs
-- **📊 Usage Analytics** - Tracks app usage and command frequency
-- **🚀 Smart Shortcuts** - Create shortcuts for frequent commands
-- **⏰ Background Processing** - Tasks run automatically in background
-- **🔔 System Monitoring** - Proactive alerts for disk, memory, CPU, battery
-
-### ✅ Previous Features (v4.0)
-- **Self-Training AI** - Learns from your conversations
-- **100% Offline** - Works without internet
-- **Completely Free** - No API costs
-- **Full Privacy** - Your data stays local
-- **3 AI Options** - Ollama, Hugging Face, or Local AI
+**A powerful, JARVIS-inspired AI assistant with advanced automation and self-training capabilities**
 
 ---
 
-## 🚀 Quick Start (5 Minutes)
+## 🚀 Quick Start (3 Steps)
 
 ```bash
-# 1. Activate virtual environment (IMPORTANT!)
-.\venv\Scripts\activate
+# Step 1: Start VEDA AI
+start_veda_fixed.bat
 
-# 2. Install ALL dependencies
-pip install -r requirements.txt
+# Step 2: Wait for message
+✅ Server is ready!
 
-# 3. Install automation packages (REQUIRED for v5.0)
-pip install schedule apscheduler
-
-# 4. Setup automation system
-python setup_automation.py
-
-# 5. Run VEDA AI
-python run_veda_ai.py
-
-# Optional: Add Ollama for better AI
-# Download from https://ollama.ai
-ollama serve
-ollama pull llama2
+# Step 3: Browser opens automatically
+http://localhost:8000
 ```
 
-Browser automatically opens at `http://localhost:8000`
-
-**⚠️ Important**: Make sure to install `schedule` and `apscheduler` packages for automation features to work!
+**That's it! VEDA AI is ready to use.** 🎉
 
 ---
 
 ## ✨ Key Features
 
-### 🤖 Automation & Intelligence
-- ⚙️ **Task Automation** - Schedule and automate repetitive tasks
-- 💡 **Proactive Assistant** - Suggests actions before you ask
-- 🧠 **Pattern Learning** - Learns your daily routines
-- 📊 **Smart Analytics** - Tracks usage and provides insights
-- 🚀 **Quick Shortcuts** - One-word commands for complex tasks
-- 🔔 **System Monitoring** - Real-time health checks and alerts
-
 ### 🎯 Core Features
-- 🎤 **90-95% Voice Accuracy** - Advanced voice calibration
+- 🎤 **90-95% Voice Accuracy** - Advanced voice recognition
 - 🌐 **Bilingual Support** - English + Hinglish
-- 💻 **System Control** - Complete Windows control
+- 💻 **System Control** - Complete Windows automation
 - 🌤️ **Real-time Weather** - Live weather updates
-- 🤖 **Self-Training AI** - Learns from you automatically
-- 🔒 **Security Hardened** - Comprehensive protection
+- 🤖 **Self-Training AI** - Learns from conversations
+- 🔒 **100% Private** - All data stays local
 - 📚 **Offline Mode** - Works without internet
+
+### 🤖 Automation (v5.0)
+- ⚙️ **Task Scheduler** - Automate repetitive tasks
+- 💡 **Proactive Suggestions** - AI suggests actions
+- 🧠 **Pattern Learning** - Learns your routines
+- 📊 **Usage Analytics** - Tracks and optimizes
+- 🚀 **Smart Shortcuts** - One-word commands
 
 ---
 
-## 🧠 Self-Training AI
+## 📥 Installation
 
-### How It Works:
-1. **Use VEDA normally** - Talk to it like usual
-2. **Automatic Learning** - Saves successful conversations
-3. **Gets Smarter** - Reuses learned responses
-4. **Train Custom Model** - Optional advanced training
+### Prerequisites:
+- Windows 10/11
+- Python 3.8+
+- 4GB RAM (8GB recommended)
 
-### AI Options (Priority Order):
-1. **Learned Responses** - From previous conversations
-2. **Ollama** - Local AI models (recommended)
-3. **Hugging Face** - Transformer models
-4. **Local AI** - Rule-based (always available)
+### Install:
 
-### Quick Setup:
 ```bash
-# Option 1: Use as-is (already working!)
-python run_veda_ai.py
+# 1. Create virtual environment
+python -m venv venv
 
-# Option 2: Add Ollama (recommended)
-ollama serve
-ollama pull llama2
+# 2. Activate
+venv\Scripts\activate.bat
 
-# Option 3: Train custom model
-python train_veda.py
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Run VEDA AI
+start_veda_fixed.bat
 ```
 
-**See:** `QUICK_SETUP_SELF_TRAINING.md` for detailed setup
+---
+
+## 🤖 LM Studio Setup (Optional but Recommended)
+
+For better AI responses, install LM Studio:
+
+### Quick Setup:
+1. Download from: https://lmstudio.ai/
+2. Install and launch
+3. Download "Phi-3 Mini" model (2GB)
+4. Load model and start server
+5. VEDA AI will automatically use it!
+
+**See:** `docs/guides/LM_STUDIO_SETUP.md` for detailed guide
+
+---
+
+## 💬 Example Commands
+
+### English:
+```
+"Hello VEDA"
+"Open Chrome"
+"What's the weather?"
+"Close Notepad"
+"Shutdown computer"
+```
+
+### Hinglish:
+```
+"Namaste VEDA"
+"Chrome kholo"
+"Mausam kaisa hai?"
+"Notepad band karo"
+"Computer shutdown karo"
+```
 
 ---
 
 ## 📚 Documentation
 
 ### Quick Guides:
-- 📖 **[QUICK_SETUP_SELF_TRAINING.md](QUICK_SETUP_SELF_TRAINING.md)** - 5-minute setup
-- 🎓 **[SELF_TRAINING_GUIDE.md](SELF_TRAINING_GUIDE.md)** - Complete training guide
-- ✅ **[OPENAI_REMOVED.md](OPENAI_REMOVED.md)** - What changed
+- 📖 **[COMPLETE_README.md](COMPLETE_README.md)** - Complete documentation (all-in-one)
+- 🚀 **[START_HERE.txt](START_HERE.txt)** - Quick start guide
+- 🤖 **[LM Studio Setup](docs/guides/LM_STUDIO_SETUP.md)** - AI setup guide
+- 🌐 **[Browser Fix](docs/troubleshooting/BROWSER_FIX_GUIDE.md)** - Browser issues
+- 🎤 **[Voice Setup](docs/guides/VOICE_README.md)** - Voice configuration
 
-### Complete Documentation:
-- 📖 **[DOCUMENTATION.md](DOCUMENTATION.md)** - Full documentation
-- System Commands
-- Building Executable
-- Deployment Guide
-- Security Information
-- Troubleshooting
-- Fixes Applied
+### Folder Structure:
+```
+veda-ai/
+├── docs/                    # All documentation
+│   ├── guides/             # Setup guides
+│   ├── troubleshooting/    # Problem solutions
+│   └── archive/            # Old documentation
+├── scripts/                # Utility scripts
+├── python_backend/         # Backend code
+├── python_frontend/        # Frontend code
+├── data/                   # User data
+├── logs/                   # Log files
+├── README.md              # This file (quick start)
+└── COMPLETE_README.md     # Complete documentation
+```
 
 ---
 
-## 🐛 Bug Tracking
+## 🐛 Troubleshooting
 
-For security issues and bug reports, see:
+### Common Issues:
 
-### 🔒 [BUGS.md](BUGS.md)
+**Browser not opening?**
+```bash
+start_veda_fixed.bat
+```
 
----
+**Voice not working?**
+```bash
+python scripts\fix_microphone.py
+```
 
-## 💬 Example Commands
+**Need diagnostics?**
+```bash
+scripts\diagnose_veda.bat
+```
 
-**English:**
-- "Hello" / "Open Chrome" / "What's the weather?"
-
-**Hinglish:**
-- "Namaste" / "Chrome kholo" / "Mausam kaisa hai?"
+**See:** `docs/troubleshooting/` for detailed solutions
 
 ---
 
 ## 🆘 Quick Help
 
-**Voice not working?**
-```bash
-python fix_microphone.py
-```
+| Problem | Solution |
+|---------|----------|
+| Browser issues | Run `start_veda_fixed.bat` |
+| Voice issues | Run `scripts\fix_microphone.py` |
+| Port conflict | Run `scripts\diagnose_veda.bat` |
+| Dependencies | Run `pip install -r requirements.txt` |
+| LM Studio | See `docs/guides/LM_STUDIO_SETUP.md` |
 
-**Test everything:**
-```bash
-python test_fixes.py
-```
+---
 
-**View logs:**
-```bash
-type logs\veda_ai.log
-```
+## 🎯 What's New in v5.0?
+
+- ✅ **LM Studio Integration** - Better AI with GUI
+- ✅ **Browser Auto-Fix** - No more manual opening
+- ✅ **Advanced Automation** - Task scheduler & suggestions
+- ✅ **Pattern Learning** - Learns your routines
+- ✅ **Smart Shortcuts** - One-word commands
+- ✅ **System Monitoring** - Proactive alerts
 
 ---
 
 ## 📞 Support
 
-- **Documentation:** [DOCUMENTATION.md](DOCUMENTATION.md)
-- **Bugs:** [BUGS.md](BUGS.md)
-- **Issues:** [GitHub Issues](https://github.com/yourusername/veda-ai/issues)
+- **Complete Docs:** [COMPLETE_README.md](COMPLETE_README.md)
+- **Guides:** `docs/guides/`
+- **Troubleshooting:** `docs/troubleshooting/`
+- **Scripts:** `scripts/`
 
 ---
 
+## 🎊 Credits
+
 **Made with ❤️ in India 🇮🇳**
 
-*"At your service, Sir."* - VEDA AI
+**Technologies:**
+- Python 3.8+
+- FastAPI
+- LM Studio
+- WebSocket
+- Speech Recognition
+
+---
+
+## 📄 License
+
+MIT License
+
+---
+
+**Version:** 5.0  
+**Date:** January 2026  
+**Status:** ✅ Production Ready
+
+*"At your service, Sir."* - VEDA AI 🤖

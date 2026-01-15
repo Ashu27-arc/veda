@@ -1,0 +1,190 @@
+╔══════════════════════════════════════════════════════════════════╗
+║                                                                  ║
+║              🚀 LM STUDIO - QUICK REFERENCE CARD 🚀              ║
+║                     For VEDA AI Users                            ║
+║                                                                  ║
+╚══════════════════════════════════════════════════════════════════╝
+
+📥 INSTALLATION
+═══════════════════════════════════════════════════════════════════
+
+1. Download: https://lmstudio.ai/
+2. Install: Run installer
+3. Launch: Open from Start Menu
+
+🤖 RECOMMENDED MODELS
+═══════════════════════════════════════════════════════════════════
+
+Low-End PC (4GB RAM):
+  • Phi-3 Mini Q4_K_M (~2GB) ⭐⭐⭐⭐⭐
+
+Mid-Range PC (8GB RAM):
+  • Llama 3.2 3B Q4_K_M (~2GB) ⭐⭐⭐⭐
+  • Mistral 7B Q4_K_M (~4GB) ⭐⭐⭐⭐⭐
+
+High-End PC (16GB+ RAM):
+  • Llama 3.1 8B Q5_K_M (~6GB) ⭐⭐⭐⭐⭐
+  • Mistral 7B Q8_0 (~8GB) ⭐⭐⭐⭐⭐
+
+📥 DOWNLOAD MODEL
+═══════════════════════════════════════════════════════════════════
+
+1. Click "Discover" tab
+2. Search: "Phi-3" (or your choice)
+3. Select model
+4. Choose: GGUF format
+5. Pick: Q4_K_M quantization
+6. Click "Download"
+7. Wait for completion
+
+🔌 START SERVER
+═══════════════════════════════════════════════════════════════════
+
+1. Go to "Local Server" tab
+2. Click "Select a model to load"
+3. Choose downloaded model
+4. Click "Load Model"
+5. Wait for "Model loaded"
+6. Click "Start Server"
+7. Verify: ✅ Server running on port 1234
+
+⚙️ VEDA AI CONFIGURATION
+═══════════════════════════════════════════════════════════════════
+
+Your .env file (already configured):
+
+AI_MODE=self_training
+LM_STUDIO_MODEL=local-model
+LM_STUDIO_API_URL=http://localhost:1234
+LM_STUDIO_TIMEOUT=60
+LM_STUDIO_MAX_RETRIES=2
+
+No changes needed!
+
+🚀 START VEDA AI
+═══════════════════════════════════════════════════════════════════
+
+Method 1 (Best):
+  start_veda_fixed.bat
+
+Method 2:
+  python run_veda_ai.py
+
+🧪 TESTING
+═══════════════════════════════════════════════════════════════════
+
+Test 1 - Check LM Studio:
+  Browser: http://localhost:1234/v1/models
+  Should show: JSON with model info
+
+Test 2 - Test VEDA AI:
+  Command: "Hello VEDA"
+  Check logs: "Using LM Studio model: local-model"
+
+🐛 TROUBLESHOOTING
+═══════════════════════════════════════════════════════════════════
+
+Problem: "LM Studio not running"
+Solution:
+  1. Open LM Studio
+  2. Load model
+  3. Start server
+  4. Check green indicator
+
+Problem: "Connection refused"
+Solution:
+  1. Verify server running
+  2. Check port 1234 not blocked
+  3. Check firewall
+
+Problem: "Slow responses"
+Solution:
+  1. Use Phi-3 Mini
+  2. Use Q4_K_M quantization
+  3. Close other apps
+  4. Increase timeout in .env
+
+Problem: "Out of memory"
+Solution:
+  1. Use smaller model
+  2. Close other apps
+  3. Restart computer
+  4. Use Q4_K_M quantization
+
+💡 PRO TIPS
+═══════════════════════════════════════════════════════════════════
+
+• Keep LM Studio server running in background
+• Use Phi-3 Mini for speed, Mistral for quality
+• Q4_K_M is best balance of speed/quality
+• Enable GPU acceleration in LM Studio settings
+• Monitor RAM usage in Task Manager
+• Keep 2-3 models downloaded for flexibility
+
+📚 DOCUMENTATION
+═══════════════════════════════════════════════════════════════════
+
+English Guide:
+  LM_STUDIO_SETUP.md
+
+Hindi Guide:
+  LM_STUDIO_SETUP_HINDI.md
+
+Migration Guide:
+  OLLAMA_TO_LM_STUDIO_MIGRATION.md
+
+Complete Summary:
+  OLLAMA_REPLACED_WITH_LM_STUDIO.md
+
+🎯 QUICK START CHECKLIST
+═══════════════════════════════════════════════════════════════════
+
+□ Install LM Studio
+□ Download Phi-3 Mini model
+□ Load model in "Local Server"
+□ Start server (port 1234)
+□ Verify at http://localhost:1234/v1/models
+□ Run start_veda_fixed.bat
+□ Test with "Hello VEDA"
+□ Check logs for "Using LM Studio model"
+
+🔗 USEFUL LINKS
+═══════════════════════════════════════════════════════════════════
+
+LM Studio:
+  https://lmstudio.ai/
+
+Discord:
+  https://discord.gg/lmstudio
+
+Models:
+  https://huggingface.co/models?library=gguf
+
+VEDA AI Docs:
+  See DOCUMENTATION.md
+
+✅ BENEFITS
+═══════════════════════════════════════════════════════════════════
+
+✅ Easy GUI interface (no CLI needed)
+✅ Visual model management
+✅ OpenAI-compatible API
+✅ Better Windows support
+✅ Real-time monitoring
+✅ Built-in model browser
+✅ 100% privacy (fully local)
+✅ No API costs (completely free)
+✅ Offline mode (no internet needed)
+
+═══════════════════════════════════════════════════════════════════
+
+Version: 1.0
+Date: January 2026
+Status: ✅ Production Ready
+Tested: Windows 10/11
+
+═══════════════════════════════════════════════════════════════════
+
+🙏 ENJOY VEDA AI WITH LM STUDIO! 🚀
+
+═══════════════════════════════════════════════════════════════════
