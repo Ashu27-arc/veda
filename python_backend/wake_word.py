@@ -24,10 +24,21 @@ def start_wake_word():
     try:
         log_info("Initializing wake word detection...")
         
-        porcupine = pvporcupine.create(
-            access_key=ACCESS_KEY,
-            keywords=["computer"]  # Using "computer" as wake word (closest to VEDA)
-        )
+        # Try to use custom "Hey Veda" wake word if available
+        custom_wake_word_path = os.path.join("python_frontend", "sounds", "Hey-Veda_en_windows_v4_0_0.ppn")
+        
+        if os.path.exists(custom_wake_word_path):
+            log_info("Using custom 'Hey VEDA' wake word")
+            porcupine = pvporcupine.create(
+                access_key=ACCESS_KEY,
+                keyword_paths=[custom_wake_word_path]
+            )
+        else:
+            log_info("Using default 'computer' wake word")
+            porcupine = pvporcupine.create(
+                access_key=ACCESS_KEY,
+                keywords=["computer"]  # Using "computer" as wake word (closest to VEDA)
+            )
 
         pa = pyaudio.PyAudio()
         stream = pa.open(
