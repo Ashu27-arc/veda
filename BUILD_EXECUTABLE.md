@@ -9,20 +9,47 @@
 pip install pyinstaller
 ```
 
-2. **Simple EXE Banao**:
+2. **Logo ko ICO format mein convert karo**:
+```bash
+# Pehle logo convert karo (PNG to ICO)
+python convert_logo_to_ico.py
+```
+
+3. **Simple EXE Banao (without logo)**:
 ```bash
 pyinstaller --onefile --windowed run_veda_ai.py
 ```
 
-3. **Advanced EXE with Icon**:
+4. **EXE with VEDA Logo (Recommended)**:
 ```bash
-pyinstaller --onefile --windowed --icon=python_frontend/assets/veda-logo.png --name="VEDA_AI" run_veda_ai.py
+pyinstaller --onefile --windowed --icon=veda-icon.ico --name="VEDA_AI" run_veda_ai.py
 ```
 
 4. **Complete Build with All Files**:
 ```bash
-pyinstaller --onedir --windowed --icon=python_frontend/assets/veda-logo.png --add-data "python_frontend;python_frontend" --add-data "data;data" --add-data ".env;." --name="VEDA_AI" run_veda_ai.py
+pyinstaller --onedir --windowed --icon=veda-icon.ico --add-data "python_frontend;python_frontend" --add-data "data;data" --add-data ".env;." --name="VEDA_AI" run_veda_ai.py
 ```
+
+### 🚀 Quick Build (Automated with Logo)
+
+**Option A: Windows Batch Script**
+```bash
+# Sabse easy - ek command mein sab kuch!
+build_with_logo.bat
+```
+
+**Option B: Python Script (Cross-platform)**
+```bash
+# Windows, Linux, Mac sabpe kaam karega
+python build_with_logo.py
+```
+
+Yeh scripts automatically:
+- ✅ Logo ko ICO format mein convert karenge
+- ✅ PyInstaller install karenge
+- ✅ EXE with logo banayenge
+- ✅ Cleanup karenge
+- ✅ Results dikhayenge
 
 5. **EXE File Location**:
 ```
