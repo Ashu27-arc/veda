@@ -40,5 +40,23 @@
     "user_input": "test",
     "ai_response": "Sir, I'm listening, Sir. I can help you with system control, opening applications, checking time/date, and more. What would you like me to do?",
     "feedback": null
+  },
+  {
+    "timestamp": "2026-01-16T01:55:45.871056",
+    "user_input": "है वेद",
+    "ai_response": "Sir, Haha, that's my favorite one too.",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-16T01:57:24.094155",
+    "user_input": "ओपन युटुब",
+    "ai_response": "Sir, Thanks, I just realized I'm not familiar with the language.",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-16T01:58:03.361432",
+    "user_input": "play the song",
+    "ai_response": "Sir, Thanks, I did. I had to put on the movie.",
+    "feedback": null
   }
 ]

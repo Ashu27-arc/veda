@@ -48,11 +48,25 @@ echo    Browser will open automatically!
 echo ========================================
 echo.
 
-REM Run VEDA AI
-python run_veda_ai.py
+REM Start VEDA AI in background
+start /B python run_veda_ai.py
+
+REM Wait for server to start
+echo [*] Waiting for server to start...
+timeout /t 5 /nobreak >nul
+
+REM Open browser
+echo [*] Opening browser...
+start http://localhost:8000
 
 echo.
 echo ========================================
-echo    VEDA AI has stopped
+echo    VEDA AI is running!
+echo    Browser opened at: http://localhost:8000
 echo ========================================
-pause
+echo.
+echo Press Ctrl+C to stop VEDA AI
+echo.
+
+REM Keep window open
+pause >nul

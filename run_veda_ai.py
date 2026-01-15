@@ -54,20 +54,47 @@ def open_ui():
     print("🌐 Opening VEDA AI in browser...")
     
     # Try multiple methods to open browser
+    browser_opened = False
+    
+    # Method 1: Windows start command (most reliable on Windows)
     try:
-        # Method 1: Default browser
-        webbrowser.open("http://localhost:8000")
-        print("✅ Browser opened successfully!")
+        import os
+        os.system("start http://localhost:8000")
+        print("✅ Browser opened using Windows command!")
+        browser_opened = True
     except Exception as e:
-        print(f"⚠️ Default browser failed: {e}")
+        print(f"⚠️ Windows start failed: {e}")
+    
+    # Method 2: Python webbrowser module
+    if not browser_opened:
         try:
-            # Method 2: Windows specific
-            import os
-            os.system("start http://localhost:8000")
-            print("✅ Browser opened using Windows command!")
-        except Exception as e2:
-            print(f"⚠️ Windows start failed: {e2}")
-            print("📝 Please manually open: http://localhost:8000")
+            webbrowser.open("http://localhost:8000", new=2)  # new=2 opens in new tab
+            print("✅ Browser opened using webbrowser module!")
+            browser_opened = True
+        except Exception as e:
+            print(f"⚠️ Webbrowser module failed: {e}")
+    
+    # Method 3: Direct browser executable
+    if not browser_opened:
+        try:
+            import subprocess
+            # Try Chrome first
+            chrome_paths = [
+                r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+                r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+            ]
+            for chrome_path in chrome_paths:
+                if os.path.exists(chrome_path):
+                    subprocess.Popen([chrome_path, "http://localhost:8000"])
+                    print("✅ Browser opened using Chrome!")
+                    browser_opened = True
+                    break
+        except Exception as e:
+            print(f"⚠️ Direct Chrome launch failed: {e}")
+    
+    if not browser_opened:
+        print("⚠️ Could not automatically open browser")
+        print("📝 Please manually open: http://localhost:8000")
 
 if __name__ == "__main__":
     print("🚀 Starting VEDA AI...")
