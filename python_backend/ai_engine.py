@@ -4,6 +4,7 @@ from python_backend.utils import is_online
 from python_backend.local_ai import local_ai_response
 from python_backend.logger import log_info, log_error, log_warning
 from python_backend.jarvis_personality import get_jarvis
+from python_backend.context_awareness import get_context_awareness
 import subprocess
 import os
 import webbrowser
@@ -92,6 +93,13 @@ def process_command(command: str, auto_speak: bool = True):
     """
     # Get JARVIS personality instance
     jarvis = get_jarvis()
+    
+    # Track command in context awareness
+    try:
+        context = get_context_awareness()
+        context.track_command(command)
+    except Exception as e:
+        log_error(f"Error tracking command: {e}")
     
     if not command or not isinstance(command, str):
         return "Invalid command"

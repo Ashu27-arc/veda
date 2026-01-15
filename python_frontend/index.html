@@ -20,79 +20,210 @@
 
   <!-- Main Container -->
   <div class="veda-container">
-    <!-- Central Logo System -->
-    <div class="veda-core">
-      <!-- Outer Rings -->
-      <div class="tech-ring ring-outer"></div>
-      <div class="tech-ring ring-middle"></div>
-      <div class="tech-ring ring-inner"></div>
-      
-      <!-- Central Logo -->
-      <div class="logo-container">
-        <img src="assets/veda-logo-bg.png" alt="VEDA AI Logo" class="veda-logo" />
+    <!-- Left Side: VEDA Core -->
+    <div class="left-section">
+      <!-- Central Logo System -->
+      <div class="veda-core">
+        <!-- Outer Rings -->
+        <div class="tech-ring ring-outer"></div>
+        <div class="tech-ring ring-middle"></div>
+        <div class="tech-ring ring-inner"></div>
         
-        <!-- Vertical Light Beams - Top Part -->
-        <div class="light-beam light-beam-top"></div>
-        <div class="light-beam light-beam-top"></div>
-        <div class="light-beam light-beam-top"></div>
-        <div class="light-beam light-beam-top"></div>
-        <div class="light-beam light-beam-top"></div>
+        <!-- Central Logo -->
+        <div class="logo-container">
+          <img src="assets/veda-logo-bg.png" alt="VEDA AI Logo" class="veda-logo" />
+          
+          <!-- Vertical Light Beams - Top Part -->
+          <div class="light-beam light-beam-top"></div>
+          <div class="light-beam light-beam-top"></div>
+          <div class="light-beam light-beam-top"></div>
+          <div class="light-beam light-beam-top"></div>
+          <div class="light-beam light-beam-top"></div>
+          
+          <!-- Vertical Light Beams - Bottom Part -->
+          <div class="light-beam light-beam-bottom"></div>
+          <div class="light-beam light-beam-bottom"></div>
+          <div class="light-beam light-beam-bottom"></div>
+          <div class="light-beam light-beam-bottom"></div>
+          <div class="light-beam light-beam-bottom"></div>
+        </div>
         
-        <!-- Vertical Light Beams - Bottom Part -->
-        <div class="light-beam light-beam-bottom"></div>
-        <div class="light-beam light-beam-bottom"></div>
-        <div class="light-beam light-beam-bottom"></div>
-        <div class="light-beam light-beam-bottom"></div>
-        <div class="light-beam light-beam-bottom"></div>
+        <!-- Particle Effects -->
+        <div class="particles">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
       </div>
-      
-      <!-- Particle Effects -->
-      <div class="particles">
+
+      <!-- VEDA Title -->
+      <div class="veda-title">
+        <h1>VEDA</h1>
+        <p class="subtitle">YOUR INTELLIGENT ASSISTANT</p>
+      </div>
+
+      <!-- Voice Wave Indicator -->
+      <div class="voice-wave" id="wave">
         <span></span><span></span><span></span><span></span><span></span>
         <span></span><span></span><span></span><span></span><span></span>
       </div>
     </div>
 
-    <!-- VEDA Title -->
-    <div class="veda-title">
-      <h1>VEDA</h1>
-      <p class="subtitle">YOUR INTELLIGENT ASSISTANT</p>
+    <!-- Right Side: Control Panel -->
+    <div class="right-section">
+      <!-- Decorative Rings for Right Side -->
+      <div class="right-rings">
+        <div class="tech-ring ring-outer-right"></div>
+        <div class="tech-ring ring-middle-right"></div>
+        <div class="tech-ring ring-inner-right"></div>
+      </div>
+      
+      <!-- Control Panel -->
+      <div class="control-panel">
+        <div class="panel-header">
+          <div class="status-container">
+            <div class="status-indicator"></div>
+            <span class="status-text">SYSTEM ONLINE</span>
+          </div>
+          <button class="btn-automation" onclick="toggleAutomationPanel()" title="Automation Settings">
+            <span>⚙️ AUTO</span>
+          </button>
+        </div>
+        
+        <div class="output-container">
+          <div id="output">Initializing VEDA AI...</div>
+        </div>
+        
+        <!-- Suggestions Panel -->
+        <div class="suggestions-panel" id="suggestions-panel" style="display: none;">
+          <div class="suggestions-header">
+            <span>💡 Proactive Suggestions</span>
+            <button onclick="closeSuggestions()">✕</button>
+          </div>
+          <div id="suggestions-list"></div>
+        </div>
+        
+        <div class="input-group">
+          <input id="command" placeholder="Enter command..." />
+          <button class="btn-primary" onclick="sendCommand()">
+            <span>EXECUTE</span>
+          </button>
+        </div>
+        
+        <div class="action-buttons">
+          <button class="btn-voice" onclick="startVoice()">
+            <span class="btn-icon">🎤</span>
+            <span>VOICE INPUT</span>
+          </button>
+          <button class="btn-calibrate" onclick="calibrateMic()">
+            <span class="btn-icon">🎯</span>
+            <span>CALIBRATE</span>
+          </button>
+          <button class="btn-suggestions" onclick="loadSuggestions()">
+            <span class="btn-icon">💡</span>
+            <span>SUGGESTIONS</span>
+          </button>
+        </div>
+      </div>
     </div>
 
-    <!-- Control Panel -->
-    <div class="control-panel">
-      <div class="panel-header">
-        <div class="status-indicator"></div>
-        <span class="status-text">SYSTEM ONLINE</span>
+    <!-- Right Side: VEDA Core -->
+    <div class="right-section">
+      <!-- Central Logo System -->
+      <div class="veda-core">
+        <!-- Outer Rings -->
+        <div class="tech-ring ring-outer"></div>
+        <div class="tech-ring ring-middle"></div>
+        <div class="tech-ring ring-inner"></div>
+        
+        <!-- Central Logo -->
+        <div class="logo-container">
+          <img src="assets/veda-logo.png" alt="VEDA AI Logo" class="veda-logo" />
+          
+          <!-- Vertical Light Beams - Top Part -->
+          <div class="light-beam light-beam-top"></div>
+          <div class="light-beam light-beam-top"></div>
+          <div class="light-beam light-beam-top"></div>
+          <div class="light-beam light-beam-top"></div>
+          <div class="light-beam light-beam-top"></div>
+          
+          <!-- Vertical Light Beams - Bottom Part -->
+          <div class="light-beam light-beam-bottom"></div>
+          <div class="light-beam light-beam-bottom"></div>
+          <div class="light-beam light-beam-bottom"></div>
+          <div class="light-beam light-beam-bottom"></div>
+          <div class="light-beam light-beam-bottom"></div>
+        </div>
+        
+        <!-- Particle Effects -->
+        <div class="particles">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
       </div>
-      
-      <div class="output-container">
-        <div id="output">Initializing VEDA AI...</div>
+
+      <!-- VEDA Title -->
+      <div class="veda-title">
+        <h1>VEDA</h1>
+        <p class="subtitle">YOUR INTELLIGENT ASSISTANT</p>
       </div>
-      
-      <div class="input-group">
-        <input id="command" placeholder="Enter command..." />
-        <button class="btn-primary" onclick="sendCommand()">
-          <span>EXECUTE</span>
-        </button>
-      </div>
-      
-      <div class="action-buttons">
-        <button class="btn-voice" onclick="startVoice()">
-          <span class="btn-icon">🎤</span>
-          <span>VOICE INPUT</span>
-        </button>
-        <button class="btn-calibrate" onclick="calibrateMic()">
-          <span class="btn-icon">🎯</span>
-          <span>CALIBRATE</span>
-        </button>
+
+      <!-- Voice Wave Indicator -->
+      <div class="voice-wave" id="wave">
+        <span></span><span></span><span></span><span></span><span></span>
+        <span></span><span></span><span></span><span></span><span></span>
       </div>
     </div>
+  </div>
 
-    <!-- Voice Wave Indicator -->
-    <div class="voice-wave" id="wave">
-      <span></span><span></span><span></span><span></span><span></span>
-      <span></span><span></span><span></span><span></span><span></span>
+  <!-- Automation Panel (Modal) -->
+  <div class="automation-modal" id="automation-modal" style="display: none;">
+    <div class="automation-content">
+      <div class="automation-header">
+        <h2>⚙️ Automation Settings</h2>
+        <button onclick="toggleAutomationPanel()">✕</button>
+      </div>
+      
+      <div class="automation-tabs">
+        <button class="tab-btn active" onclick="showTab('tasks')">Scheduled Tasks</button>
+        <button class="tab-btn" onclick="showTab('context')">Context & Patterns</button>
+        <button class="tab-btn" onclick="showTab('shortcuts')">Shortcuts</button>
+      </div>
+      
+      <div class="automation-body">
+        <!-- Tasks Tab -->
+        <div id="tasks-tab" class="tab-content active">
+          <div class="add-task-form">
+            <h3>Add New Task</h3>
+            <input type="text" id="task-name" placeholder="Task name" />
+            <input type="text" id="task-command" placeholder="Command to execute" />
+            <select id="task-schedule-type">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="interval">Interval</option>
+              <option value="once">Once</option>
+            </select>
+            <input type="text" id="task-schedule-value" placeholder="e.g., 08:00 or 1h" />
+            <button onclick="addScheduledTask()">Add Task</button>
+          </div>
+          <div id="tasks-list"></div>
+        </div>
+        
+        <!-- Context Tab -->
+        <div id="context-tab" class="tab-content">
+          <div id="context-info"></div>
+        </div>
+        
+        <!-- Shortcuts Tab -->
+        <div id="shortcuts-tab" class="tab-content">
+          <div class="add-shortcut-form">
+            <h3>Create Shortcut</h3>
+            <input type="text" id="shortcut-name" placeholder="Shortcut name" />
+            <input type="text" id="shortcut-command" placeholder="Full command" />
+            <button onclick="createShortcut()">Create</button>
+          </div>
+          <div id="shortcuts-list"></div>
+        </div>
+      </div>
     </div>
   </div>
 

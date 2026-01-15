@@ -26,22 +26,20 @@ VOICE_PROFILE_PATH = "data/voice_profile.json"
 # Advanced recognizer settings
 def configure_recognizer():
     """Configure recognizer with optimal settings"""
-    # Energy threshold - adjust based on ambient noise
-    recognizer.energy_threshold = 3000  # Reduced for better sensitivity
+    # Energy threshold - FIXED value for consistency
+    recognizer.energy_threshold = 4000  # Stable threshold
     
-    # Dynamic energy adjustment
-    recognizer.dynamic_energy_threshold = True
-    recognizer.dynamic_energy_adjustment_damping = 0.15
-    recognizer.dynamic_energy_ratio = 1.5
+    # Dynamic energy adjustment - DISABLED for consistency
+    recognizer.dynamic_energy_threshold = False  # Keep threshold stable
     
-    # Pause threshold - how long to wait for silence (reduced for faster response)
-    recognizer.pause_threshold = 0.6
+    # Pause threshold - how long to wait for silence
+    recognizer.pause_threshold = 0.8  # Increased for better phrase capture
     
     # Phrase threshold - minimum audio length
     recognizer.phrase_threshold = 0.3
     
     # Non-speaking duration
-    recognizer.non_speaking_duration = 0.4
+    recognizer.non_speaking_duration = 0.5
     
     log_info("Voice recognizer configured with optimized settings")
 
@@ -114,17 +112,18 @@ def test_microphone_access():
 def listen_command_advanced(timeout=10, phrase_limit=15):
     """Advanced voice command listening with better accuracy and reliability"""
     try:
-        # Load voice profile if available (skip microphone test for speed)
-        load_voice_profile()
-        
         print("🎤 Ready! Speak your command...")
         log_info("Starting voice recognition...")
         
         with sr.Microphone() as source:
-            # Quick ambient noise adjustment (reduced from 2 to 1 second)
-            recognizer.adjust_for_ambient_noise(source, duration=1)
+            # IMPORTANT: Longer ambient noise adjustment for better accuracy
+            print("🎤 Adjusting for ambient noise... (please wait)")
+            recognizer.adjust_for_ambient_noise(source, duration=2)
             
-            print(f"🎤 Listening... (speak now)")
+            # Reset to stable threshold after adjustment
+            recognizer.energy_threshold = 4000
+            
+            print(f"🎤 Listening... (speak clearly and loudly)")
             log_info(f"Listening... (threshold: {recognizer.energy_threshold})")
             
             # Listen with optimized timeout
@@ -134,45 +133,64 @@ def listen_command_advanced(timeout=10, phrase_limit=15):
                 phrase_time_limit=phrase_limit
             )
             
-            print("🔄 Processing...")
+            print("🔄 Processing speech...")
             log_info("Processing audio...")
 
-        # Try Google Speech Recognition with both languages
+        # Try Google Speech Recognition with multiple language attempts
         command = None
         
         try:
-            # Try Hindi/Hinglish first
-            print("🌐 Recognizing speech...")
+            # Try Hindi/Hinglish first (best for Indian users)
+            print("🌐 Recognizing speech (Hindi/Hinglish)...")
             try:
                 command = recognizer.recognize_google(audio, language='hi-IN')
-            except:
-                # Fallback to English
-                command = recognizer.recognize_google(audio, language='en-IN')
+                if command:
+                    print(f"✅ Recognized (Hindi): '{command}'")
+                    log_info(f"Successfully recognized (hi-IN): {command}")
+                    return command
+            except sr.UnknownValueError:
+                pass  # Try next language
             
+            # Fallback to English (India)
+            print("🌐 Trying English recognition...")
+            try:
+                command = recognizer.recognize_google(audio, language='en-IN')
+                if command:
+                    print(f"✅ Recognized (English): '{command}'")
+                    log_info(f"Successfully recognized (en-IN): {command}")
+                    return command
+            except sr.UnknownValueError:
+                pass  # Try next language
+            
+            # Last fallback to US English
+            print("🌐 Trying US English...")
+            command = recognizer.recognize_google(audio, language='en-US')
             if command:
-                print(f"✅ Recognized: '{command}'")
-                log_info(f"Successfully recognized: {command}")
+                print(f"✅ Recognized (US English): '{command}'")
+                log_info(f"Successfully recognized (en-US): {command}")
                 return command
                     
         except sr.UnknownValueError:
-            print("❓ Could not understand audio")
-            log_warning("Speech not understood")
+            print("❓ Could not understand audio - please speak more clearly")
+            log_warning("Speech not understood in any language")
             return ""
         
         except sr.RequestError as e:
             print(f"🌐 Speech service error: {e}")
+            print("💡 Check your internet connection")
             log_error(f"Google Speech API error: {e}")
             return ""
         
         return ""
         
     except sr.WaitTimeoutError:
-        print("⏱️ No speech detected")
+        print("⏱️ No speech detected - please try again")
         log_warning("Listening timeout")
         return ""
         
     except OSError as e:
         print(f"🎤 Microphone error: {e}")
+        print("💡 Check Windows Settings > Privacy > Microphone")
         log_error(f"Microphone access error: {e}")
         return ""
         
@@ -208,22 +226,21 @@ def speak(text):
         print(f"🔊 VEDA AI: {text}")
         log_info(f"Speaking: {text}")
         
-        # Stop any ongoing speech first to prevent repetition
+        # Create a fresh engine instance to avoid "run loop already started" error
+        import pyttsx3
+        local_engine = pyttsx3.init()
+        local_engine.setProperty("rate", 175)
+        local_engine.setProperty("volume", 1.0)
+        
+        # Speak the text
+        local_engine.say(text)
+        local_engine.runAndWait()
+        
+        # Clean up
         try:
-            engine.stop()
+            local_engine.stop()
         except:
             pass
-        
-        # Small delay to ensure engine is ready
-        import time
-        time.sleep(0.1)
-        
-        # Speak with better pacing
-        engine.say(text)
-        engine.runAndWait()
-        
-        # Ensure completion before next command
-        time.sleep(0.1)
         
     except Exception as e:
         log_error(f"Speech synthesis error: {e}")

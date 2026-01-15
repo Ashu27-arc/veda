@@ -1,18 +1,27 @@
-# 🤖 VEDA AI - Self-Training Intelligent Assistant
+# 🤖 VEDA AI - Advanced Automated Intelligent Assistant
 
 ![VEDA AI](https://img.shields.io/badge/VEDA-AI%20Assistant-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/version-4.0-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-5.0-green?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3.8+-yellow?style=for-the-badge&logo=python)
 ![License](https://img.shields.io/badge/license-MIT-red?style=for-the-badge)
-![AI](https://img.shields.io/badge/AI-Self--Training-purple?style=for-the-badge)
+![AI](https://img.shields.io/badge/AI-Automated-purple?style=for-the-badge)
 
-**A powerful, JARVIS-inspired AI assistant with self-training capabilities - No OpenAI required!**
+**A powerful, JARVIS-inspired AI assistant with advanced automation and self-training capabilities - No OpenAI required!**
 
 ---
 
-## 🎯 What's New in v4.0
+## 🎯 What's New in v5.0 - AUTOMATION EDITION
 
-### ✅ OpenAI Completely Removed
+### 🤖 Advanced Automation System
+- **⚙️ Task Scheduler** - Schedule tasks daily, weekly, or at intervals
+- **💡 Proactive Suggestions** - AI suggests actions based on context
+- **🧠 Context Awareness** - Learns your patterns and predicts needs
+- **📊 Usage Analytics** - Tracks app usage and command frequency
+- **🚀 Smart Shortcuts** - Create shortcuts for frequent commands
+- **⏰ Background Processing** - Tasks run automatically in background
+- **🔔 System Monitoring** - Proactive alerts for disk, memory, CPU, battery
+
+### ✅ Previous Features (v4.0)
 - **Self-Training AI** - Learns from your conversations
 - **100% Offline** - Works without internet
 - **Completely Free** - No API costs
@@ -21,16 +30,25 @@
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start (5 Minutes)
 
 ```bash
-# Install dependencies
+# 1. Activate virtual environment (IMPORTANT!)
+.\venv\Scripts\activate
+
+# 2. Install ALL dependencies
 pip install -r requirements.txt
 
-# Run VEDA AI (works immediately!)
+# 3. Install automation packages (REQUIRED for v5.0)
+pip install schedule apscheduler
+
+# 4. Setup automation system
+python setup_automation.py
+
+# 5. Run VEDA AI
 python run_veda_ai.py
 
-# Optional: Add Ollama for better AI (5 minutes)
+# Optional: Add Ollama for better AI
 # Download from https://ollama.ai
 ollama serve
 ollama pull llama2
@@ -38,13 +56,23 @@ ollama pull llama2
 
 Browser automatically opens at `http://localhost:8000`
 
+**⚠️ Important**: Make sure to install `schedule` and `apscheduler` packages for automation features to work!
+
 ---
 
 ## ✨ Key Features
 
-- 🎯 **90-95% Voice Accuracy** - Advanced voice calibration
+### 🤖 Automation & Intelligence
+- ⚙️ **Task Automation** - Schedule and automate repetitive tasks
+- 💡 **Proactive Assistant** - Suggests actions before you ask
+- 🧠 **Pattern Learning** - Learns your daily routines
+- 📊 **Smart Analytics** - Tracks usage and provides insights
+- 🚀 **Quick Shortcuts** - One-word commands for complex tasks
+- 🔔 **System Monitoring** - Real-time health checks and alerts
+
+### 🎯 Core Features
+- 🎤 **90-95% Voice Accuracy** - Advanced voice calibration
 - 🌐 **Bilingual Support** - English + Hinglish
-- 🎤 **Voice Control** - Natural voice commands
 - 💻 **System Control** - Complete Windows control
 - 🌤️ **Real-time Weather** - Live weather updates
 - 🤖 **Self-Training AI** - Learns from you automatically

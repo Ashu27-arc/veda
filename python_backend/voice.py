@@ -29,8 +29,8 @@ def set_hindi_voice():
 set_hindi_voice()
 
 # Configure recognizer for better accuracy
-recognizer.energy_threshold = 4000  # Adjust based on ambient noise
-recognizer.dynamic_energy_threshold = True
+recognizer.energy_threshold = 4000  # Stable threshold
+recognizer.dynamic_energy_threshold = False  # Keep stable
 recognizer.pause_threshold = 0.8  # Seconds of silence before phrase is complete
 
 def test_microphone():
@@ -67,19 +67,18 @@ def test_microphone():
 def listen_command():
     """Listen for voice command from microphone"""
     try:
-        # Test microphone first
-        if not test_microphone():
-            return ""
-        
         print("🎤 Initializing microphone...")
         log_info("Initializing microphone...")
         
         with sr.Microphone() as source:
-            print("🎤 Adjusting for ambient noise... (please wait)")
+            print("🎤 Adjusting for ambient noise... (please wait 2 seconds)")
             log_info("Adjusting for ambient noise...")
             recognizer.adjust_for_ambient_noise(source, duration=2)
             
-            print(f"🎤 Listening... Speak now!")
+            # Reset to stable threshold
+            recognizer.energy_threshold = 4000
+            
+            print(f"🎤 Listening... Speak now! (speak clearly and loudly)")
             print(f"   Energy threshold: {recognizer.energy_threshold}")
             log_info(f"Listening for command... (threshold: {recognizer.energy_threshold})")
             
@@ -89,13 +88,28 @@ def listen_command():
             print("🔄 Processing speech...")
             log_info("Processing audio...")
 
-        # Try to recognize speech (using Indian English for better Hindi/Hinglish support)
+        # Try to recognize speech with multiple languages
         print("🌐 Connecting to Google Speech API...")
-        command = recognizer.recognize_google(audio, language='hi-IN')
         
-        print(f"✅ You said: '{command}'")
-        log_info(f"Recognized: {command}")
-        return command
+        try:
+            # Try Hindi/Hinglish first
+            command = recognizer.recognize_google(audio, language='hi-IN')
+            print(f"✅ You said (Hindi): '{command}'")
+            log_info(f"Recognized (hi-IN): {command}")
+            return command
+        except:
+            try:
+                # Try English (India)
+                command = recognizer.recognize_google(audio, language='en-IN')
+                print(f"✅ You said (English): '{command}'")
+                log_info(f"Recognized (en-IN): {command}")
+                return command
+            except:
+                # Try US English
+                command = recognizer.recognize_google(audio, language='en-US')
+                print(f"✅ You said (US English): '{command}'")
+                log_info(f"Recognized (en-US): {command}")
+                return command
         
     except sr.WaitTimeoutError:
         error_msg = "No speech detected. Please try again."
@@ -134,24 +148,31 @@ def speak(text):
         print(f"🔊 VEDA: {text}")
         log_info(f"Speaking: {text}")
         
-        # Reinitialize engine for each speak to avoid state issues
-        global engine
+        # Create fresh engine instance to avoid "run loop already started" error
+        import pyttsx3
+        local_engine = pyttsx3.init()
+        local_engine.setProperty("rate", 175)
+        local_engine.setProperty("volume", 1.0)
+        
+        # Try to set Hindi voice
         try:
-            engine.stop()
+            voices = local_engine.getProperty('voices')
+            for voice in voices:
+                if 'hindi' in voice.name.lower() or 'hi-in' in voice.id.lower() or 'hi_IN' in voice.id:
+                    local_engine.setProperty('voice', voice.id)
+                    break
         except:
             pass
         
-        # Create fresh engine instance to avoid state issues
-        engine = pyttsx3.init()
-        engine.setProperty("rate", 175)
-        engine.setProperty("volume", 1.0)
-        
-        # Set voice if available
-        set_hindi_voice()
-        
         # Speak the text
-        engine.say(text)
-        engine.runAndWait()
+        local_engine.say(text)
+        local_engine.runAndWait()
+        
+        # Clean up
+        try:
+            local_engine.stop()
+        except:
+            pass
         
     except Exception as e:
         log_error(f"Speech synthesis error: {e}")

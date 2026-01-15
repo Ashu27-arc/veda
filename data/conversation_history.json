@@ -1,1 +1,44 @@
-[]
+[
+  {
+    "timestamp": "2026-01-15T22:02:37.354101",
+    "user_input": "ओपन युटुब",
+    "ai_response": "Sir, I'm listening, Sir. I can help you with system control, opening applications, checking time/date, and more. What would you like me to do?",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-15T22:06:16.547310",
+    "user_input": "है वेद",
+    "ai_response": "Sir, That's the one. Thanks.",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-15T22:08:10.458686",
+    "user_input": "है वेद",
+    "ai_response": "Sir, 1",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-15T22:22:56.167450",
+    "user_input": "test",
+    "ai_response": "Sir, I'm listening, Sir. I can help you with system control, opening applications, checking time/date, and more. What would you like me to do?",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-15T23:36:52.681522",
+    "user_input": "हे वेदर",
+    "ai_response": "Sir, You just blew my mind",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-15T23:38:48.744593",
+    "user_input": "आयुर्वेद",
+    "ai_response": "Sir, Thank you for the translation!",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-15T23:50:07.101282",
+    "user_input": "test",
+    "ai_response": "Sir, I'm listening, Sir. I can help you with system control, opening applications, checking time/date, and more. What would you like me to do?",
+    "feedback": null
+  }
+]

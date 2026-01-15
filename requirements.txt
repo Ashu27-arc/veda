@@ -15,6 +15,8 @@ pystray
 psutil
 websockets
 requests
+schedule
+apscheduler
 
 # Self-training AI (install as needed)
 # transformers  # For Hugging Face

@@ -15,11 +15,22 @@ from python_backend.gesture_control import start_gesture_control
 from python_backend.logger import log_info, log_error, log_warning
 from python_backend.settings_manager import load_settings, get_owner_name
 from python_backend.jarvis_personality import get_jarvis
+from python_backend.automation_engine import get_automation_engine, start_automation, get_automation_status
+from python_backend.proactive_assistant import get_proactive_assistant
+from python_backend.context_awareness import get_context_awareness
+from python_backend.task_scheduler import get_task_scheduler
 import threading
 
 # Load settings on startup
 settings = load_settings()
 log_info(f"VEDA AI initializing for {get_owner_name()}")
+
+# Start automation engine
+try:
+    start_automation()
+    log_info("Automation engine started")
+except Exception as e:
+    log_error(f"Failed to start automation engine: {e}")
 
 app = FastAPI(title="VEDA AI", version="4.0.0")
 
@@ -103,18 +114,29 @@ def voice_command():
         if not test_microphone_access():
             log_error("Microphone not accessible")
             return {
-                "error": "Microphone not accessible. Please check your microphone connection and permissions in Windows Settings.",
-                "status": "error"
+                "error": "Microphone not accessible. Please check your microphone connection and permissions in Windows Settings > Privacy > Microphone.",
+                "status": "error",
+                "tips": [
+                    "Check if microphone is connected",
+                    "Enable microphone in Windows Settings",
+                    "Close other apps using microphone"
+                ]
             }
         
         # Get voice command
         command = listen_command_advanced()
         
-        if not command:
+        if not command or command.strip() == "":
             log_warning("No voice detected")
             return {
-                "error": "No voice detected. Please speak clearly and try again.",
-                "status": "no_speech"
+                "error": "No voice detected or could not understand speech.",
+                "status": "no_speech",
+                "tips": [
+                    "Speak more clearly and loudly",
+                    "Reduce background noise",
+                    "Check internet connection (required for speech recognition)",
+                    "Try speaking in Hindi, Hinglish, or English"
+                ]
             }
         
         if len(command) > 500:
@@ -202,6 +224,137 @@ async def update_owner(data: dict):
     except Exception as e:
         log_error(f"Error updating owner name: {e}")
         return {"status": "error", "message": str(e)}
+
+# ========== AUTOMATION ENDPOINTS ==========
+
+@app.get("/automation/status")
+def automation_status():
+    """Get automation engine status"""
+    try:
+        return get_automation_status()
+    except Exception as e:
+        log_error(f"Error getting automation status: {e}")
+        return {"error": str(e)}
+
+@app.get("/automation/suggestions")
+def get_suggestions():
+    """Get proactive suggestions"""
+    try:
+        assistant = get_proactive_assistant()
+        suggestions = assistant.get_all_suggestions()
+        return {"suggestions": suggestions, "count": len(suggestions)}
+    except Exception as e:
+        log_error(f"Error getting suggestions: {e}")
+        return {"error": str(e)}
+
+@app.post("/automation/execute-suggestion")
+async def execute_suggestion(data: dict):
+    """Execute a suggested action"""
+    try:
+        action = data.get("action")
+        if not action:
+            return {"error": "Action not specified"}
+        
+        assistant = get_proactive_assistant()
+        result = assistant.execute_suggestion_action(action)
+        return {"status": "success", "result": result}
+    except Exception as e:
+        log_error(f"Error executing suggestion: {e}")
+        return {"error": str(e)}
+
+@app.get("/automation/context")
+def get_context():
+    """Get current context information"""
+    try:
+        context = get_context_awareness()
+        return {
+            "current_context": context.get_current_context(),
+            "prediction": context.predict_next_action(),
+            "frequent_tasks": context.get_frequent_tasks(limit=10)
+        }
+    except Exception as e:
+        log_error(f"Error getting context: {e}")
+        return {"error": str(e)}
+
+@app.post("/automation/shortcut")
+async def create_shortcut(data: dict):
+    """Create a command shortcut"""
+    try:
+        name = data.get("name")
+        command = data.get("command")
+        
+        if not name or not command:
+            return {"error": "Name and command required"}
+        
+        context = get_context_awareness()
+        context.create_shortcut(name, command)
+        return {"status": "success", "message": f"Shortcut '{name}' created"}
+    except Exception as e:
+        log_error(f"Error creating shortcut: {e}")
+        return {"error": str(e)}
+
+# ========== TASK SCHEDULER ENDPOINTS ==========
+
+@app.get("/tasks")
+def get_tasks():
+    """Get all scheduled tasks"""
+    try:
+        scheduler = get_task_scheduler()
+        return {"tasks": scheduler.get_all_tasks()}
+    except Exception as e:
+        log_error(f"Error getting tasks: {e}")
+        return {"error": str(e)}
+
+@app.post("/tasks")
+async def add_task(data: dict):
+    """Add a new scheduled task"""
+    try:
+        scheduler = get_task_scheduler()
+        task = scheduler.add_task(
+            name=data.get("name"),
+            command=data.get("command"),
+            schedule_type=data.get("schedule_type"),
+            schedule_value=data.get("schedule_value"),
+            enabled=data.get("enabled", True),
+            conditions=data.get("conditions")
+        )
+        return {"status": "success", "task": task}
+    except Exception as e:
+        log_error(f"Error adding task: {e}")
+        return {"error": str(e)}
+
+@app.delete("/tasks/{task_id}")
+async def delete_task(task_id: int):
+    """Delete a scheduled task"""
+    try:
+        scheduler = get_task_scheduler()
+        scheduler.delete_task(task_id)
+        return {"status": "success", "message": f"Task {task_id} deleted"}
+    except Exception as e:
+        log_error(f"Error deleting task: {e}")
+        return {"error": str(e)}
+
+@app.post("/tasks/{task_id}/enable")
+async def enable_task(task_id: int):
+    """Enable a task"""
+    try:
+        scheduler = get_task_scheduler()
+        scheduler.enable_task(task_id)
+        return {"status": "success", "message": f"Task {task_id} enabled"}
+    except Exception as e:
+        log_error(f"Error enabling task: {e}")
+        return {"error": str(e)}
+
+@app.post("/tasks/{task_id}/disable")
+async def disable_task(task_id: int):
+    """Disable a task"""
+    try:
+        scheduler = get_task_scheduler()
+        scheduler.disable_task(task_id)
+        return {"status": "success", "message": f"Task {task_id} disabled"}
+    except Exception as e:
+        log_error(f"Error disabling task: {e}")
+        return {"error": str(e)}
 
 @app.get("/")
 async def read_root():

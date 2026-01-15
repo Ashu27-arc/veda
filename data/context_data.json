@@ -1,0 +1,39 @@
+{
+  "app_usage": {},
+  "command_frequency": {
+    "test command": {
+      "count": 1,
+      "last_used": "2026-01-15T22:22:21.737835"
+    },
+    "test": {
+      "count": 2,
+      "last_used": "2026-01-15T23:49:34.133199"
+    },
+    "hii": {
+      "count": 3,
+      "last_used": "2026-01-15T23:30:49.037350"
+    },
+    "है वे": {
+      "count": 1,
+      "last_used": "2026-01-15T22:45:44.575292"
+    },
+    "open youtube": {
+      "count": 1,
+      "last_used": "2026-01-15T22:46:40.095167"
+    },
+    "है वेद": {
+      "count": 1,
+      "last_used": "2026-01-15T23:24:00.853888"
+    },
+    "hey  veda": {
+      "count": 1,
+      "last_used": "2026-01-15T23:25:36.250303"
+    },
+    "आयुर्वेद": {
+      "count": 1,
+      "last_used": "2026-01-15T23:38:15.258335"
+    }
+  },
+  "time_patterns": {},
+  "location_context": {}
+}

@@ -31,7 +31,20 @@ def open_ui():
     """Open UI in browser after delay"""
     time.sleep(5)  # Increased delay to ensure server is fully ready
     print("🌐 Opening VEDA AI in browser...")
-    webbrowser.open("http://localhost:8000")
+    
+    # Try multiple methods to open browser
+    try:
+        # Method 1: Default browser
+        webbrowser.open("http://localhost:8000")
+    except Exception as e:
+        print(f"⚠️ Default browser failed: {e}")
+        try:
+            # Method 2: Windows specific
+            import os
+            os.system("start http://localhost:8000")
+        except Exception as e2:
+            print(f"⚠️ Windows start failed: {e2}")
+            print("📝 Please manually open: http://localhost:8000")
 
 if __name__ == "__main__":
     print("🚀 Starting VEDA AI...")

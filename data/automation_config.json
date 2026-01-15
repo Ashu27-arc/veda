@@ -1,0 +1,42 @@
+{
+  "enabled": true,
+  "proactive_mode": true,
+  "auto_tasks": {
+    "morning_briefing": {
+      "enabled": true,
+      "time": "08:00",
+      "actions": [
+        "weather",
+        "news",
+        "calendar"
+      ]
+    },
+    "system_health_check": {
+      "enabled": true,
+      "interval": "1h",
+      "actions": [
+        "check_disk",
+        "check_memory",
+        "check_updates"
+      ]
+    },
+    "auto_cleanup": {
+      "enabled": true,
+      "time": "23:00",
+      "actions": [
+        "clear_temp",
+        "organize_downloads"
+      ]
+    }
+  },
+  "smart_suggestions": {
+    "enabled": true,
+    "learn_patterns": true,
+    "suggest_shortcuts": true
+  },
+  "context_awareness": {
+    "enabled": true,
+    "track_usage": true,
+    "predict_needs": true
+  }
+}
