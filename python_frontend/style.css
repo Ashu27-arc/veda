@@ -195,20 +195,109 @@ body {
     }
 }
 
-/* Light Beam */
-.light-beam {
+/* Light Beams - Top Part (coming from above through logo) */
+.light-beam-top {
     position: absolute;
-    top: -200px;
+    top: -400px;
     left: 50%;
-    transform: translateX(-50%);
-    width: 2px;
-    height: 200px;
+    height: 490px;
     background: linear-gradient(to bottom,
             rgba(0, 255, 255, 0) 0%,
-            rgba(0, 255, 255, 0.8) 50%,
-            rgba(0, 255, 255, 0) 100%);
-    box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+            rgba(0, 255, 255, 0.3) 50%,
+            rgba(0, 255, 255, 0.8) 100%);
     animation: beamPulse 2s ease-in-out infinite;
+    filter: blur(1px);
+}
+
+/* Light Beams - Bottom Part (expanding downward into platform) */
+.light-beam-bottom {
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    height: 400px;
+    background: linear-gradient(to bottom,
+            rgba(0, 255, 255, 0.9) 0%,
+            rgba(0, 255, 255, 0.6) 30%,
+            rgba(0, 255, 255, 0.2) 70%,
+            rgba(0, 255, 255, 0) 100%);
+    animation: beamPulse 2s ease-in-out infinite;
+    filter: blur(2px);
+}
+
+/* Top beams - multiple thick beams */
+.light-beam-top:nth-child(1) {
+    width: 8px;
+    transform: translateX(-50%);
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.9);
+    filter: blur(0px);
+}
+
+.light-beam-top:nth-child(2) {
+    width: 6px;
+    transform: translateX(calc(-50% - 10px));
+    animation-delay: 0.1s;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+}
+
+.light-beam-top:nth-child(3) {
+    width: 6px;
+    transform: translateX(calc(-50% + 10px));
+    animation-delay: 0.2s;
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.8);
+}
+
+.light-beam-top:nth-child(4) {
+    width: 4px;
+    transform: translateX(calc(-50% - 20px));
+    animation-delay: 0.3s;
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.7);
+}
+
+.light-beam-top:nth-child(5) {
+    width: 4px;
+    transform: translateX(calc(-50% + 20px));
+    animation-delay: 0.4s;
+    box-shadow: 0 0 25px rgba(0, 255, 255, 0.7);
+}
+
+/* Bottom beams - expanding into wide platform */
+.light-beam-bottom:nth-child(6) {
+    width: 12px;
+    transform: translateX(-50%);
+    box-shadow: 0 0 60px rgba(0, 255, 255, 0.9);
+    filter: blur(3px);
+}
+
+.light-beam-bottom:nth-child(7) {
+    width: 20px;
+    transform: translateX(calc(-50% - 15px));
+    animation-delay: 0.1s;
+    box-shadow: 0 0 50px rgba(0, 255, 255, 0.8);
+    filter: blur(4px);
+}
+
+.light-beam-bottom:nth-child(8) {
+    width: 20px;
+    transform: translateX(calc(-50% + 15px));
+    animation-delay: 0.2s;
+    box-shadow: 0 0 50px rgba(0, 255, 255, 0.8);
+    filter: blur(4px);
+}
+
+.light-beam-bottom:nth-child(9) {
+    width: 30px;
+    transform: translateX(calc(-50% - 35px));
+    animation-delay: 0.3s;
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.6);
+    filter: blur(5px);
+}
+
+.light-beam-bottom:nth-child(10) {
+    width: 30px;
+    transform: translateX(calc(-50% + 35px));
+    animation-delay: 0.4s;
+    box-shadow: 0 0 40px rgba(0, 255, 255, 0.6);
+    filter: blur(5px);
 }
 
 @keyframes beamPulse {

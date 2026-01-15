@@ -85,7 +85,7 @@ def execute_direct_action(command: str):
         return None
 
 def process_command(command: str, auto_speak: bool = True):
-    """Process user command and return response
+    """Process user command and return response - DIRECT COMMAND EXECUTION MODE
     
     Args:
         command: User command string
@@ -229,39 +229,14 @@ def process_command(command: str, auto_speak: bool = True):
                 log_info(f"Direct action executed: {action_response}")
                 return action_response
 
-        # 3️⃣ AI MODE - Add personality layer
-        response = None
+        # 3️⃣ LOCAL AI RESPONSE - NO CHATGPT DEPENDENCY
+        # Always use local AI for questions and queries
+        response = local_ai_response(command)
+        log_info("Using local AI (no ChatGPT required)")
         
-        # Show thinking response (only if not already acknowledged)
-        if auto_speak and not is_action_command:
-            thinking = jarvis.get_thinking_response()
-            speak(thinking)
-        
-        if is_online():
-            try:
-                # Add personality context to AI prompt
-                personality_prompt = f"""You are VEDA AI, an intelligent assistant like JARVIS from Iron Man. 
-You address your owner as '{jarvis.owner_name}'. 
-Be professional, respectful, and conversational.
-Respond naturally in a mix of Hindi and English (Hinglish) if the user speaks in Hinglish.
-Keep responses concise and helpful.
-
-User query: {original_command}"""
-                
-                response = chatgpt_response(personality_prompt)
-                log_info("Using online AI with personality")
-            except Exception as e:
-                log_error(f"Online AI failed: {e}")
-                response = None
-        
-        # Fallback to local AI if online fails or offline
-        if not response or "not configured" in response.lower():
-            response = local_ai_response(command)
-            log_info("Using offline AI")
-            
-            # Add personality touch to local AI response
-            if response and not response.startswith(jarvis.owner_name):
-                response = f"{jarvis.owner_name}, {response}"
+        # Add personality touch to local AI response
+        if response and not response.startswith(jarvis.owner_name):
+            response = f"{jarvis.owner_name}, {response}"
         
         if auto_speak:
             speak(response)

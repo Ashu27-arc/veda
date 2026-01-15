@@ -1,9 +1,26 @@
 from python_backend.jarvis_personality import get_jarvis
 
 def local_ai_response(command):
-    """Offline AI responses with JARVIS personality and Hinglish support"""
+    """Offline AI responses with JARVIS personality and Hinglish support - NO CHATGPT REQUIRED"""
     
     jarvis = get_jarvis()
+    
+    # ⚡ PRIORITY CHECKS - Time/Date (check FIRST before dictionary matching)
+    # Time queries (both languages)
+    if any(word in command for word in ["time", "samay", "kitne baje", "baje"]):
+        from datetime import datetime
+        time_str = datetime.now().strftime('%I:%M %p')
+        if any(word in command for word in ["samay", "kitne baje", "baje", "batao"]):
+            return f"{jarvis.owner_name}, abhi {time_str} baj rahe hain."
+        return f"{jarvis.owner_name}, it's {time_str} right now."
+
+    # Date queries (both languages)
+    if any(word in command for word in ["date", "today", "tarikh", "aaj ki date"]):
+        from datetime import datetime
+        date_str = datetime.now().strftime('%A, %B %d, %Y')
+        if any(word in command for word in ["tarikh", "aaj ki date", "aaj"]):
+            return f"{jarvis.owner_name}, aaj {date_str} hai."
+        return f"{jarvis.owner_name}, today is {date_str}."
     
     # English responses - JARVIS style
     qa_english = {
@@ -22,15 +39,14 @@ def local_ai_response(command):
         "good morning": f"Good morning, {jarvis.owner_name}. I trust you slept well. How may I assist you today?",
         "good night": f"Good night, {jarvis.owner_name}. Rest well. I'll be here if you need me.",
         "help": f"Of course, {jarvis.owner_name}. I can control your system, open applications, manage volume, check weather, answer questions, and assist with various tasks. What do you need?",
-        "what time": f"Let me check that for you, {jarvis.owner_name}.",
         "tell me a joke": f"Certainly, {jarvis.owner_name}. Why did the AI go to school? To improve its learning algorithms! Shall I find you a better one?",
         "are you there": jarvis.get_ready_response(),
         "veda": f"Yes, {jarvis.owner_name}. How can I help?",
         "status": f"All systems operational, {jarvis.owner_name}. Ready to assist.",
-        "ready": jarvis.get_ready_response()
+        "ready": jarvis.get_ready_response(),
     }
     
-    # Hinglish responses - JARVIS style with Hindi
+    # Hinglish responses - JARVIS style with Hindi (REMOVED generic "batao", "kya hai" to avoid conflicts)
     qa_hinglish = {
         "tum kaun ho": f"Main VEDA hoon, aapka personal AI assistant, {jarvis.owner_name}. Aapki har zarurat ke liye main yahaan hoon.",
         "tumhara naam kya hai": f"Mera naam VEDA hai, {jarvis.owner_name}. Aapki seva mein hazir hoon.",
@@ -49,7 +65,8 @@ def local_ai_response(command):
         "kya chal raha hai": f"Sab kuch smooth chal raha hai, {jarvis.owner_name}. Aapke liye kya kar sakti hoon?",
         "taiyar ho": f"Hamesha taiyar hoon, {jarvis.owner_name}.",
         "veda": f"Ji {jarvis.owner_name}, kya kaam hai?",
-        "status": f"Sab systems operational hain, {jarvis.owner_name}. Ready to assist."
+        "status": f"Sab systems operational hain, {jarvis.owner_name}. Ready to assist.",
+        "kaise kare": f"Main madad kar sakti hoon {jarvis.owner_name}. Aur detail mein bataiye kya karna hai.",
     }
     
     # Check Hinglish first
@@ -61,28 +78,12 @@ def local_ai_response(command):
     for q in qa_english:
         if q in command:
             return qa_english[q]
-
-    # Time queries (both languages)
-    if "time" in command or "samay" in command or "kitne baje" in command:
-        from datetime import datetime
-        time_str = datetime.now().strftime('%I:%M %p')
-        if "samay" in command or "kitne baje" in command:
-            return f"{jarvis.owner_name}, abhi {time_str} baj rahe hain."
-        return f"{jarvis.owner_name}, it's {time_str} right now."
-
-    # Date queries (both languages)
-    if "date" in command or "today" in command or "tarikh" in command or "aaj ki date" in command:
-        from datetime import datetime
-        date_str = datetime.now().strftime('%A, %B %d, %Y')
-        if "tarikh" in command or "aaj ki date" in command:
-            return f"{jarvis.owner_name}, aaj {date_str} hai."
-        return f"{jarvis.owner_name}, today is {date_str}."
     
-    # Weather queries
+    # Weather queries - redirect to weather command
     if "weather" in command or "mausam" in command:
         if "mausam" in command:
-            return f"{jarvis.owner_name}, weather check karne ke liye internet connection chahiye. Online mode use karein."
-        return f"{jarvis.owner_name}, I need an internet connection to check the weather. Please go online or configure your OpenAI API key."
+            return f"{jarvis.owner_name}, weather check karne ke liye 'weather' command use karein. Example: 'Delhi ka weather batao'"
+        return f"{jarvis.owner_name}, to check weather, use the weather command. Example: 'weather in Delhi'"
     
     # Conversational responses
     if any(word in command for word in ["love you", "pyar", "like you"]):
@@ -95,11 +96,18 @@ def local_ai_response(command):
             return f"Thank you, {jarvis.owner_name}. I strive to serve you better every day."
         return f"Shukriya, {jarvis.owner_name}. Main hamesha behtar hone ki koshish karta hoon."
     
-    # Default responses based on language
+    # System info queries
+    if "system" in command or "computer" in command or "pc" in command:
+        if any(w in command for w in ["info", "information", "details", "specs"]):
+            import platform
+            return f"{jarvis.owner_name}, you're running {platform.system()} {platform.release()} on {platform.machine()} architecture."
+    
+    # Default responses based on language - MORE HELPFUL
     if any(word in command for word in ["kya", "kaise", "kab", "kahan", "kaun", "kyun"]):
-        return f"{jarvis.owner_name}, main offline mode mein limited hoon. Better responses ke liye internet aur OpenAI API key use karein."
+        return f"Samajh gaya {jarvis.owner_name}. Main aapki madad karne ke liye yahaan hoon. Kya aap thoda aur detail mein bata sakte hain?"
     
     if any(word in command for word in ["what", "how", "when", "where", "who", "why"]):
-        return f"{jarvis.owner_name}, I'm in offline mode with limited knowledge. For comprehensive answers, please connect to the internet."
+        return f"I understand, {jarvis.owner_name}. I'm here to help. Could you provide more details about what you need?"
     
-    return f"I'm here to help, {jarvis.owner_name}. In offline mode, I can handle basic tasks. For advanced features, please connect to the internet."
+    # Generic helpful response
+    return f"I'm listening, {jarvis.owner_name}. I can help you with system control, opening applications, checking time/date, and more. What would you like me to do?"
