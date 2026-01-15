@@ -25,41 +25,42 @@ VOICE_PROFILE_PATH = "data/voice_profile.json"
 
 # Advanced recognizer settings
 def configure_recognizer():
-    """Configure recognizer with optimal settings"""
-    # Energy threshold - FIXED value for consistency
-    recognizer.energy_threshold = 4000  # Stable threshold
+    """Configure recognizer with optimal settings for Indian users"""
+    # Energy threshold - LOWER for better sensitivity
+    recognizer.energy_threshold = 300  # Much more sensitive
     
-    # Dynamic energy adjustment - DISABLED for consistency
-    recognizer.dynamic_energy_threshold = False  # Keep threshold stable
+    # Dynamic energy adjustment - ENABLED for auto-adjustment
+    recognizer.dynamic_energy_threshold = True  # Auto-adjust to environment
     
     # Pause threshold - how long to wait for silence
-    recognizer.pause_threshold = 0.8  # Increased for better phrase capture
+    recognizer.pause_threshold = 1.2  # Longer for complete phrases
     
     # Phrase threshold - minimum audio length
-    recognizer.phrase_threshold = 0.3
+    recognizer.phrase_threshold = 0.2  # Lower for quick responses
     
     # Non-speaking duration
-    recognizer.non_speaking_duration = 0.5
+    recognizer.non_speaking_duration = 0.8  # More tolerance
     
-    log_info("Voice recognizer configured with optimized settings")
+    log_info("Voice recognizer configured with optimized settings for Indian accent")
 
 configure_recognizer()
 
-def calibrate_microphone(duration=3):
-    """Calibrate microphone for user's environment"""
+def calibrate_microphone(duration=2):
+    """Calibrate microphone for user's environment - OPTIMIZED"""
     try:
         print("\n🎤 Voice Calibration Starting...")
-        print("   Please remain silent for calibration...")
+        print("   Thoda chup raho... calibrating...")
         log_info("Starting microphone calibration")
         
         with sr.Microphone() as source:
             print(f"   Calibrating... ({duration} seconds)")
             recognizer.adjust_for_ambient_noise(source, duration=duration)
             
-            # Save calibration data
+            # Don't save fixed threshold - use dynamic adjustment
             calibration_data = {
                 "energy_threshold": recognizer.energy_threshold,
-                "calibrated": True
+                "calibrated": True,
+                "dynamic_enabled": True
             }
             
             os.makedirs("data", exist_ok=True)
@@ -67,7 +68,8 @@ def calibrate_microphone(duration=3):
                 json.dump(calibration_data, f)
             
             print(f"   ✅ Calibration complete!")
-            print(f"   Energy threshold set to: {recognizer.energy_threshold}")
+            print(f"   Mic sensitivity: {recognizer.energy_threshold}")
+            print(f"   Ab bol sakte ho - Hindi/English dono chalega!")
             log_info(f"Calibration complete: threshold={recognizer.energy_threshold}")
             
             return True
@@ -78,15 +80,18 @@ def calibrate_microphone(duration=3):
         return False
 
 def load_voice_profile():
-    """Load saved voice profile"""
+    """Load saved voice profile - with dynamic adjustment"""
     try:
         if os.path.exists(VOICE_PROFILE_PATH):
             with open(VOICE_PROFILE_PATH, 'r') as f:
                 profile = json.load(f)
                 
             if profile.get("calibrated"):
-                recognizer.energy_threshold = profile.get("energy_threshold", 4000)
-                log_info(f"Voice profile loaded: threshold={recognizer.energy_threshold}")
+                # Use saved threshold as starting point
+                recognizer.energy_threshold = profile.get("energy_threshold", 300)
+                # Enable dynamic adjustment
+                recognizer.dynamic_energy_threshold = profile.get("dynamic_enabled", True)
+                log_info(f"Voice profile loaded: threshold={recognizer.energy_threshold}, dynamic={recognizer.dynamic_energy_threshold}")
                 return True
                 
     except Exception as e:
@@ -116,21 +121,20 @@ def listen_command_advanced(timeout=10, phrase_limit=15):
         log_info("Starting voice recognition...")
         
         with sr.Microphone() as source:
-            # IMPORTANT: Longer ambient noise adjustment for better accuracy
-            print("🎤 Adjusting for ambient noise... (please wait)")
-            recognizer.adjust_for_ambient_noise(source, duration=2)
+            # Quick ambient noise adjustment
+            print("🎤 Adjusting for ambient noise... (1 second)")
+            recognizer.adjust_for_ambient_noise(source, duration=1)
             
-            # Reset to stable threshold after adjustment
-            recognizer.energy_threshold = 4000
-            
-            print(f"🎤 Listening... (speak clearly and loudly)")
+            # Don't reset threshold - use dynamic adjustment
+            print(f"🎤 Listening... Bol sakte ho! (Hindi/English dono chalega)")
+            print(f"   Mic sensitivity: {recognizer.energy_threshold}")
             log_info(f"Listening... (threshold: {recognizer.energy_threshold})")
             
-            # Listen with optimized timeout
+            # Listen with much longer timeout for better detection
             audio = recognizer.listen(
                 source, 
-                timeout=timeout,
-                phrase_time_limit=phrase_limit
+                timeout=20,  # Increased from 10 to 20 seconds
+                phrase_time_limit=25  # Increased from 15 to 25 seconds
             )
             
             print("🔄 Processing speech...")
@@ -184,7 +188,7 @@ def listen_command_advanced(timeout=10, phrase_limit=15):
         return ""
         
     except sr.WaitTimeoutError:
-        print("⏱️ No speech detected - please try again")
+        print("⏱️ Koi awaaz nahi aayi - dobara try karo aur zor se bolo!")
         log_warning("Listening timeout")
         return ""
         

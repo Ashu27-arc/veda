@@ -28,10 +28,12 @@ def set_hindi_voice():
 
 set_hindi_voice()
 
-# Configure recognizer for better accuracy
-recognizer.energy_threshold = 4000  # Stable threshold
-recognizer.dynamic_energy_threshold = False  # Keep stable
-recognizer.pause_threshold = 0.8  # Seconds of silence before phrase is complete
+# Configure recognizer for better accuracy - OPTIMIZED FOR INDIAN ACCENT
+recognizer.energy_threshold = 300  # Much lower threshold for better sensitivity
+recognizer.dynamic_energy_threshold = True  # Auto-adjust to environment
+recognizer.pause_threshold = 1.2  # Longer pause for complete phrases
+recognizer.phrase_threshold = 0.2  # Lower minimum audio length
+recognizer.non_speaking_duration = 0.8  # More tolerance for pauses
 
 def test_microphone():
     """Test if microphone is accessible"""
@@ -71,19 +73,17 @@ def listen_command():
         log_info("Initializing microphone...")
         
         with sr.Microphone() as source:
-            print("🎤 Adjusting for ambient noise... (please wait 2 seconds)")
+            print("🎤 Adjusting for ambient noise... (please wait 1 second)")
             log_info("Adjusting for ambient noise...")
-            recognizer.adjust_for_ambient_noise(source, duration=2)
+            recognizer.adjust_for_ambient_noise(source, duration=1)
             
-            # Reset to stable threshold
-            recognizer.energy_threshold = 4000
-            
-            print(f"🎤 Listening... Speak now! (speak clearly and loudly)")
+            # Use dynamic threshold - don't reset to fixed value
+            print(f"🎤 Listening... Bol sakte ho! (Hindi/English dono chalega)")
             print(f"   Energy threshold: {recognizer.energy_threshold}")
             log_info(f"Listening for command... (threshold: {recognizer.energy_threshold})")
             
-            # Listen with longer timeout
-            audio = recognizer.listen(source, timeout=10, phrase_time_limit=15)
+            # Listen with much longer timeout and phrase limit
+            audio = recognizer.listen(source, timeout=15, phrase_time_limit=20)
             
             print("🔄 Processing speech...")
             log_info("Processing audio...")
@@ -112,13 +112,13 @@ def listen_command():
                 return command
         
     except sr.WaitTimeoutError:
-        error_msg = "No speech detected. Please try again."
+        error_msg = "Koi awaaz nahi aayi. Dobara try karo aur zor se bolo!"
         print(f"⏱️ {error_msg}")
         log_warning("Listening timeout - no speech detected")
         return ""
         
     except sr.UnknownValueError:
-        error_msg = "Could not understand audio. Please speak clearly."
+        error_msg = "Samajh nahi aaya. Thoda clear bolo."
         print(f"❓ {error_msg}")
         log_warning("Could not understand audio")
         return ""
