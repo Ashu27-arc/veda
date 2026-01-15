@@ -1,7 +1,6 @@
 from python_backend.system_control import handle_system_command, open_application, close_application
 from python_backend.voice import speak
 from python_backend.utils import is_online
-from python_backend.online_ai import chatgpt_response
 from python_backend.local_ai import local_ai_response
 from python_backend.logger import log_info, log_error, log_warning
 from python_backend.jarvis_personality import get_jarvis
@@ -229,17 +228,58 @@ def process_command(command: str, auto_speak: bool = True):
                 log_info(f"Direct action executed: {action_response}")
                 return action_response
 
-        # 3️⃣ LOCAL AI RESPONSE - NO CHATGPT DEPENDENCY
-        # Always use local AI for questions and queries
-        response = local_ai_response(command)
-        log_info("Using local AI (no ChatGPT required)")
+        # 3️⃣ CHECK LEARNED RESPONSES FIRST (Self-learning)
+        from python_backend.self_learning import get_learned_response, save_conversation
+        learned_response = get_learned_response(command)
         
-        # Add personality touch to local AI response
+        if learned_response:
+            log_info("Using learned response from previous conversations")
+            if auto_speak:
+                speak(learned_response)
+            return learned_response
+
+        # 4️⃣ AI RESPONSE - Multiple options (priority order)
+        response = None
+        
+        # Try Ollama first (best for self-training)
+        try:
+            from python_backend.ollama_ai import ollama_response
+            from python_backend.config import OLLAMA_MODEL
+            response = ollama_response(command, model=OLLAMA_MODEL)
+            if response:
+                log_info(f"Using Ollama model: {OLLAMA_MODEL}")
+        except ImportError:
+            log_info("Ollama not available")
+        except Exception as e:
+            log_error(f"Ollama error: {e}")
+        
+        # Try Hugging Face if Ollama fails
+        if not response:
+            try:
+                from python_backend.huggingface_ai import huggingface_response
+                response = huggingface_response(command)
+                if response:
+                    log_info("Using Hugging Face (local AI)")
+            except ImportError:
+                log_info("Hugging Face not available")
+            except Exception as e:
+                log_error(f"Hugging Face error: {e}")
+        
+        # Fallback to local AI (rule-based)
+        if not response:
+            response = local_ai_response(command)
+            log_info("Using local AI (rule-based, no external dependency)")
+        
+        # Add personality touch
         if response and not response.startswith(jarvis.owner_name):
             response = f"{jarvis.owner_name}, {response}"
         
         if auto_speak:
             speak(response)
+        
+        # Save conversation for self-learning
+        save_conversation(original_command, response)
+        
         return response
         
     except Exception as e:

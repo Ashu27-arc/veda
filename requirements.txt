@@ -1,6 +1,5 @@
 fastapi
 uvicorn[standard]
-openai
 speechrecognition
 pyttsx3
 pyaudio
@@ -16,3 +15,9 @@ pystray
 psutil
 websockets
 requests
+
+# Self-training AI (install as needed)
+# transformers  # For Hugging Face
+# torch  # For Hugging Face
+# datasets  # For training
+# Ollama: Download from https://ollama.ai

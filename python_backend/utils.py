@@ -1,3 +1,7 @@
+"""
+Utility functions for VEDA AI
+Includes security, validation, and helper functions
+"""
 import socket
 
 def is_online():
@@ -26,7 +30,7 @@ def sanitize_input(text):
     return text.strip()
 
 def validate_command(command):
-    """Validate command for security"""
+    """Validate command for security - prevents malicious commands"""
     if not command or not isinstance(command, str):
         return False
     
@@ -40,7 +44,8 @@ def validate_command(command):
         'dd if=', ':(){ :|:& };:', 'fork bomb',
         'sudo', 'chmod 777', 'wget', 'curl http',
         'powershell -enc', 'cmd /c', 'eval(',
-        'exec(', '__import__', 'os.system'
+        'exec(', '__import__', 'os.system', 'subprocess.call',
+        'rmdir /s', 'deltree', 'fdisk'
     ]
     
     command_lower = command.lower()
@@ -59,3 +64,49 @@ def truncate_text(text, max_length=500):
         return text[:max_length] + "..."
     
     return text
+
+def format_response(text, max_length=1000):
+    """Format response text for display"""
+    if not text:
+        return "No response"
+    
+    # Remove extra whitespace
+    text = ' '.join(text.split())
+    
+    # Truncate if too long
+    if len(text) > max_length:
+        text = text[:max_length] + "..."
+    
+    return text
+
+def is_valid_url(url):
+    """Check if URL is valid and safe"""
+    if not url or not isinstance(url, str):
+        return False
+    
+    # Basic URL validation
+    if not url.startswith(('http://', 'https://')):
+        return False
+    
+    # Block potentially dangerous URLs
+    dangerous_domains = ['localhost', '127.0.0.1', '0.0.0.0', 'file://']
+    for domain in dangerous_domains:
+        if domain in url.lower():
+            return False
+    
+    return True
+
+def clean_filename(filename):
+    """Clean filename to prevent path traversal"""
+    if not filename:
+        return ""
+    
+    # Remove path separators
+    filename = filename.replace('/', '').replace('\\', '')
+    
+    # Remove dangerous characters
+    dangerous_chars = ['..', '<', '>', ':', '"', '|', '?', '*']
+    for char in dangerous_chars:
+        filename = filename.replace(char, '')
+    
+    return filename.strip()

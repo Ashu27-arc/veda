@@ -1,11 +1,23 @@
-# 🤖 VEDA AI - Your Intelligent Bilingual Assistant
+# 🤖 VEDA AI - Self-Training Intelligent Assistant
 
 ![VEDA AI](https://img.shields.io/badge/VEDA-AI%20Assistant-blue?style=for-the-badge)
-![Version](https://img.shields.io/badge/version-3.1-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-4.0-green?style=for-the-badge)
 ![Python](https://img.shields.io/badge/Python-3.8+-yellow?style=for-the-badge&logo=python)
 ![License](https://img.shields.io/badge/license-MIT-red?style=for-the-badge)
+![AI](https://img.shields.io/badge/AI-Self--Training-purple?style=for-the-badge)
 
-**A powerful, JARVIS-inspired AI assistant that understands both English and Hinglish**
+**A powerful, JARVIS-inspired AI assistant with self-training capabilities - No OpenAI required!**
+
+---
+
+## 🎯 What's New in v4.0
+
+### ✅ OpenAI Completely Removed
+- **Self-Training AI** - Learns from your conversations
+- **100% Offline** - Works without internet
+- **Completely Free** - No API costs
+- **Full Privacy** - Your data stays local
+- **3 AI Options** - Ollama, Hugging Face, or Local AI
 
 ---
 
@@ -15,11 +27,13 @@
 # Install dependencies
 pip install -r requirements.txt
 
-# Run VEDA AI
+# Run VEDA AI (works immediately!)
 python run_veda_ai.py
 
-# Calibrate voice (recommended)
-python calibrate_voice.py
+# Optional: Add Ollama for better AI (5 minutes)
+# Download from https://ollama.ai
+ollama serve
+ollama pull llama2
 ```
 
 Browser automatically opens at `http://localhost:8000`
@@ -33,21 +47,52 @@ Browser automatically opens at `http://localhost:8000`
 - 🎤 **Voice Control** - Natural voice commands
 - 💻 **System Control** - Complete Windows control
 - 🌤️ **Real-time Weather** - Live weather updates
-- 🤖 **AI-Powered** - Online & offline modes
+- 🤖 **Self-Training AI** - Learns from you automatically
 - 🔒 **Security Hardened** - Comprehensive protection
+- 📚 **Offline Mode** - Works without internet
 
 ---
 
-## 📚 Complete Documentation
+## 🧠 Self-Training AI
 
-**All documentation has been merged into one comprehensive file:**
+### How It Works:
+1. **Use VEDA normally** - Talk to it like usual
+2. **Automatic Learning** - Saves successful conversations
+3. **Gets Smarter** - Reuses learned responses
+4. **Train Custom Model** - Optional advanced training
 
-### 📖 [DOCUMENTATION.md](DOCUMENTATION.md)
+### AI Options (Priority Order):
+1. **Learned Responses** - From previous conversations
+2. **Ollama** - Local AI models (recommended)
+3. **Hugging Face** - Transformer models
+4. **Local AI** - Rule-based (always available)
 
-This file contains everything you need:
-- Installation & Setup
-- Usage Guide
-- Voice Commands
+### Quick Setup:
+```bash
+# Option 1: Use as-is (already working!)
+python run_veda_ai.py
+
+# Option 2: Add Ollama (recommended)
+ollama serve
+ollama pull llama2
+
+# Option 3: Train custom model
+python train_veda.py
+```
+
+**See:** `QUICK_SETUP_SELF_TRAINING.md` for detailed setup
+
+---
+
+## 📚 Documentation
+
+### Quick Guides:
+- 📖 **[QUICK_SETUP_SELF_TRAINING.md](QUICK_SETUP_SELF_TRAINING.md)** - 5-minute setup
+- 🎓 **[SELF_TRAINING_GUIDE.md](SELF_TRAINING_GUIDE.md)** - Complete training guide
+- ✅ **[OPENAI_REMOVED.md](OPENAI_REMOVED.md)** - What changed
+
+### Complete Documentation:
+- 📖 **[DOCUMENTATION.md](DOCUMENTATION.md)** - Full documentation
 - System Commands
 - Building Executable
 - Deployment Guide

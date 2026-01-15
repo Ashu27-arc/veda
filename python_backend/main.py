@@ -21,7 +21,7 @@ import threading
 settings = load_settings()
 log_info(f"VEDA AI initializing for {get_owner_name()}")
 
-app = FastAPI(title="VEDA AI", version="2.0.0")
+app = FastAPI(title="VEDA AI", version="4.0.0")
 
 # Secure CORS configuration - only allow local origins
 app.add_middleware(
@@ -172,7 +172,8 @@ def health_check():
         "status": "healthy", 
         "service": "VEDA AI",
         "owner": jarvis.owner_name,
-        "version": "2.0.0"
+        "version": "4.0.0",
+        "ai_mode": "self_training"
     }
 
 @app.get("/settings")
