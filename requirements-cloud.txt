@@ -1,0 +1,8 @@
+# Cloud-compatible requirements (no audio/system dependencies)
+fastapi
+uvicorn[standard]
+python-dotenv
+requests
+schedule
+apscheduler
+websockets
