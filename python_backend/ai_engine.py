@@ -5,6 +5,7 @@ from python_backend.local_ai import local_ai_response
 from python_backend.logger import log_info, log_error, log_warning
 from python_backend.jarvis_personality import get_jarvis
 from python_backend.context_awareness import get_context_awareness
+from python_backend.config import AI_MODE
 import subprocess
 import os
 import webbrowser
@@ -246,41 +247,82 @@ def process_command(command: str, auto_speak: bool = True):
                 speak(learned_response)
             return learned_response
 
-        # 4️⃣ AI RESPONSE - Multiple options (priority order)
+        # 4️⃣ AI RESPONSE - Multiple options, controlled by AI_MODE
+        # AI_MODE comes from config: "lm_studio", "huggingface", or "local"
+        mode = (AI_MODE or "self_training").lower()
         response = None
-        
-        # Try LM Studio first (best for self-training)
-        try:
-            from python_backend.lm_studio_ai import lm_studio_response
-            from python_backend.config import LM_STUDIO_MODEL
-            response = lm_studio_response(command, model=LM_STUDIO_MODEL)
-            if response:
-                log_info(f"Using LM Studio model: {LM_STUDIO_MODEL}")
-        except ImportError:
-            log_info("LM Studio not available")
-        except Exception as e:
-            log_error(f"LM Studio error: {e}")
-        
-        # Try Hugging Face if LM Studio fails
-        if not response:
+
+        # Helper to try Hugging Face then fall back to local
+        def _use_huggingface_or_local(prompt: str):
+            hf_response = None
             try:
                 from python_backend.huggingface_ai import huggingface_response
-                response = huggingface_response(command)
-                if response:
+                hf_response = huggingface_response(prompt)
+                if hf_response:
                     log_info("Using Hugging Face (local AI)")
+                    return hf_response
             except ImportError:
                 log_info("Hugging Face not available")
-            except Exception as e:
-                log_error(f"Hugging Face error: {e}")
-        
-        # Fallback to local AI (rule-based)
-        if not response:
-            response = local_ai_response(command)
+            except Exception as e_inner:
+                log_error(f"Hugging Face error: {e_inner}")
+
+            # Fallback to local AI (rule-based)
+            local_response = local_ai_response(prompt)
             log_info("Using local AI (rule-based, no external dependency)")
+            return local_response
+
+        if mode == "lm_studio":
+            # Prefer LM Studio, then Hugging Face, then local
+            try:
+                from python_backend.lm_studio_ai import lm_studio_response
+                from python_backend.config import LM_STUDIO_MODEL
+                response = lm_studio_response(command, model=LM_STUDIO_MODEL)
+                if response:
+                    log_info(f"Using LM Studio model: {LM_STUDIO_MODEL}")
+            except ImportError:
+                log_info("LM Studio not available")
+            except Exception as e:
+                log_error(f"LM Studio error: {e}")
+
+            if not response:
+                response = _use_huggingface_or_local(command)
+
+        elif mode == "huggingface":
+            # Skip LM Studio completely, stay fully local/embedded
+            response = _use_huggingface_or_local(command)
+
+        elif mode == "local":
+            # Pure rule-based, no external model calls at all
+            response = local_ai_response(command)
+            log_info("Using local AI only (rule-based, fully offline)")
+
+        else:
+            # Backward-compatible behaviour (old self_training mode):
+            # try LM Studio → Hugging Face → local
+            try:
+                from python_backend.lm_studio_ai import lm_studio_response
+                from python_backend.config import LM_STUDIO_MODEL
+                response = lm_studio_response(command, model=LM_STUDIO_MODEL)
+                if response:
+                    log_info(f"Using LM Studio model: {LM_STUDIO_MODEL}")
+            except ImportError:
+                log_info("LM Studio not available")
+            except Exception as e:
+                log_error(f"LM Studio error: {e}")
+
+            if not response:
+                response = _use_huggingface_or_local(command)
         
         # Add personality touch
         if response and not response.startswith(jarvis.owner_name):
             response = f"{jarvis.owner_name}, {response}"
+
+        # Add emotional intelligence layer (empathy / warmth)
+        try:
+            response = jarvis.add_emotion_to_reply(original_command, response)
+        except Exception:
+            # Never break core response path if emotion layer fails
+            pass
         
         if auto_speak:
             speak(response)

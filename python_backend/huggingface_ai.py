@@ -7,6 +7,23 @@ from python_backend.logger import log_error, log_info
 _model = None
 _tokenizer = None
 
+def _clean_response(text: str) -> str:
+    """Light cleanup so HF outputs sound less broken in TTS."""
+    if not text:
+        return text
+
+    t = text.strip()
+    # Common weird tails like " ?" or dangling punctuation
+    t = t.replace(" ,", ",").replace(" .", ".").replace(" !", "!").replace(" ?", "?")
+    while t.endswith(" ?") or t.endswith(" ,") or t.endswith(" ."):
+        t = t[:-2].rstrip()
+
+    # If response is just punctuation / too short, treat as failure
+    if len(t) < 2 or all(ch in "?!.," for ch in t):
+        return ""
+
+    return t
+
 def load_model(model_name="microsoft/DialoGPT-medium"):
     """Load Hugging Face model (runs locally)"""
     global _model, _tokenizer
@@ -60,7 +77,8 @@ def huggingface_response(prompt):
         if prompt in response:
             response = response.replace(prompt, "").strip()
         
-        return response
+        response = _clean_response(response)
+        return response or None
         
     except Exception as e:
         log_error(f"Hugging Face error: {e}")

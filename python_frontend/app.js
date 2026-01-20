@@ -5,6 +5,7 @@ let ws;
 let reconnectAttempts = 0;
 const maxReconnectAttempts = 5;
 let isListening = false;
+let cameraStream = null;
 
 // =======================
 // STARFIELD ANIMATION
@@ -735,3 +736,49 @@ setInterval(() => {
 }, 300000); // 5 minutes
 
 console.log("🤖 VEDA AI Automation Features Loaded");
+
+// =======================
+// CAMERA (WEB UI)
+// =======================
+
+async function toggleCamera() {
+    const video = document.getElementById('camera');
+    const output = document.getElementById('output');
+
+    if (!video) {
+        console.warn('Camera element not found');
+        return;
+    }
+
+    // If already running → stop it
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        cameraStream = null;
+        video.srcObject = null;
+        if (output) {
+            output.innerText = "📷 Camera stopped.";
+            output.style.color = "#ff9800";
+        }
+        return;
+    }
+
+    // Start camera
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+            video: { width: { ideal: 640 }, height: { ideal: 480 } },
+            audio: false
+        });
+        cameraStream = stream;
+        video.srcObject = stream;
+        if (output) {
+            output.innerText = "📷 Camera started. Gesture control (backend) can also use your webcam.";
+            output.style.color = "#00e5ff";
+        }
+    } catch (err) {
+        console.error("Camera error:", err);
+        if (output) {
+            output.innerText = "❌ Could not access camera. Please allow camera permission in your browser.";
+            output.style.color = "#ff4444";
+        }
+    }
+}

@@ -58,5 +58,53 @@
     "user_input": "play the song",
     "ai_response": "Sir, Thanks, I did. I had to put on the movie.",
     "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T15:37:18.098817",
+    "user_input": "who are you?",
+    "ai_response": "Sir, I am you.",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T15:50:59.402389",
+    "user_input": "Who are you?",
+    "ai_response": "Sir, He's u iamjones, he's been around for a while.",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T15:51:25.965751",
+    "user_input": "whor are you?",
+    "ai_response": "Sir, A man of many faces.",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T16:33:04.348856",
+    "user_input": "how are you",
+    "ai_response": "Sir, I'm good, ?",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T16:33:36.952174",
+    "user_input": "how are yoy?",
+    "ai_response": "Sir, I'm well. I just woke up.",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T16:34:23.672018",
+    "user_input": "mere system pura control karo",
+    "ai_response": "Sir, I'll look into it!",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T16:34:59.095398",
+    "user_input": "ok",
+    "ai_response": "Sir, Hey, I'm not the one who is going to have to pay for that one.",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T16:51:47.947567",
+    "user_input": "tum kaun h",
+    "ai_response": "Sir, The kaun is pronounced the same as the h.",
+    "feedback": null
   }
 ]
