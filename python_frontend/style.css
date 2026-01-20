@@ -151,7 +151,7 @@ body {
    CAMERA PANEL
    ======================= */
 .camera-panel {
-    margin-top: 18px;
+    margin-bottom: 100px;
     padding: 14px;
     border: 1px solid rgba(0, 229, 255, 0.25);
     border-radius: 14px;
@@ -205,8 +205,7 @@ body {
 .camera-panel-right {
     width: 100%;
     max-width: 420px;
-    margin-left: auto;
-    margin-right: auto;
+    margin: 0 auto 16px auto;
 }
 
 /* =======================

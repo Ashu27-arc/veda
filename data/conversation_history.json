@@ -106,5 +106,11 @@
     "user_input": "tum kaun h",
     "ai_response": "Sir, The kaun is pronounced the same as the h.",
     "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T17:05:46.021451",
+    "user_input": "ek ganna cla do bas",
+    "ai_response": "Sir, It is known.",
+    "feedback": null
   }
 ]
