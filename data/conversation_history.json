@@ -112,5 +112,77 @@
     "user_input": "ek ganna cla do bas",
     "ai_response": "Sir, It is known.",
     "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T21:08:01.844234",
+    "user_input": "हाउ आर यू",
+    "ai_response": "Sir, I think we are done here.",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T21:08:33.005234",
+    "user_input": "ओपन युटुब",
+    "ai_response": "Sir, The one with the most karma will win",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T21:10:07.441094",
+    "user_input": "ओपन युटुब",
+    "ai_response": "Sir, I think you mean",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T21:11:29.362297",
+    "user_input": "है वेद",
+    "ai_response": "Sir, What is this?",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T21:18:28.495188",
+    "user_input": "ओपन युटुब",
+    "ai_response": "Sir, Dank meme",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T21:19:16.549209",
+    "user_input": "हो",
+    "ai_response": "Sir, Thanks! I was looking for something with a little more of a modern look.",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T21:19:36.607065",
+    "user_input": "हे वेदर",
+    "ai_response": "Sir, You can't even spell that word.",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T21:24:36.780431",
+    "user_input": "tum kaun ho",
+    "ai_response": "Sir, What is tum?",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T21:25:02.829380",
+    "user_input": "who are you?",
+    "ai_response": "Sir, I am the one who knocks.",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T22:23:09.366636",
+    "user_input": "हे गूगल",
+    "ai_response": "Sir, I'm listening, Sir. I can help you with system control, opening applications, checking time/date, and more. What would you like me to do?",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T22:23:49.630279",
+    "user_input": "है वेद",
+    "ai_response": "Sir, What is this?",
+    "feedback": null
+  },
+  {
+    "timestamp": "2026-01-20T22:24:11.326652",
+    "user_input": "ओपन युटुब",
+    "ai_response": "Sir, This is the correct way.",
+    "feedback": null
   }
 ]

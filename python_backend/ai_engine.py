@@ -10,6 +10,20 @@ import subprocess
 import os
 import webbrowser
 
+# ========== ML FEATURES IMPORT ==========
+try:
+    from python_backend.intent_classifier import classify_intent, get_intent
+    from python_backend.conversation_memory import add_to_memory, get_memory_history
+    from python_backend.semantic_search import get_semantic_response, learn_response
+    from python_backend.sentiment_analyzer import analyze_sentiment, get_empathetic_prefix
+    from python_backend.ai_providers import get_ai_response as get_provider_response
+    from python_backend.ml_config import FEATURES, ENABLE_CONVERSATION_MEMORY
+    ML_FEATURES_AVAILABLE = True
+    log_info("ML features loaded successfully")
+except ImportError as e:
+    ML_FEATURES_AVAILABLE = False
+    log_warning(f"ML features not available: {e}")
+
 def execute_direct_action(command: str):
     """Execute direct action commands that weren't caught by system_control"""
     jarvis = get_jarvis()
@@ -85,12 +99,13 @@ def execute_direct_action(command: str):
         log_error(f"Direct action error: {e}")
         return None
 
-def process_command(command: str, auto_speak: bool = True):
+def process_command(command: str, auto_speak: bool = True, session_id: str = None):
     """Process user command and return response - DIRECT COMMAND EXECUTION MODE
     
     Args:
         command: User command string
         auto_speak: If True, automatically speak the response (default: True)
+        session_id: Session ID for conversation memory (optional)
     """
     # Get JARVIS personality instance
     jarvis = get_jarvis()
@@ -101,6 +116,22 @@ def process_command(command: str, auto_speak: bool = True):
         context.track_command(command)
     except Exception as e:
         log_error(f"Error tracking command: {e}")
+    
+    # ========== ML FEATURES: Intent Classification & Sentiment ==========
+    intent_info = None
+    sentiment_info = None
+    
+    if ML_FEATURES_AVAILABLE:
+        try:
+            # Classify intent for better understanding
+            intent_info = classify_intent(command)
+            log_info(f"Intent: {intent_info['intent']} (confidence: {intent_info['confidence']:.2f})")
+            
+            # Analyze sentiment for empathetic responses
+            sentiment_info = analyze_sentiment(command)
+            log_info(f"Sentiment: {sentiment_info['sentiment']}")
+        except Exception as e:
+            log_error(f"ML feature error: {e}")
     
     if not command or not isinstance(command, str):
         return "Invalid command"
@@ -237,8 +268,25 @@ def process_command(command: str, auto_speak: bool = True):
                 log_info(f"Direct action executed: {action_response}")
                 return action_response
 
-        # 3️⃣ CHECK LEARNED RESPONSES FIRST (Self-learning)
+        # 3️⃣ CHECK LEARNED RESPONSES (Self-learning + Semantic Search)
         from python_backend.self_learning import get_learned_response, save_conversation
+        
+        # Try semantic search first (ML-based)
+        if ML_FEATURES_AVAILABLE and FEATURES.get("semantic_similarity"):
+            try:
+                semantic_response = get_semantic_response(command)
+                if semantic_response:
+                    log_info("Using semantic learned response")
+                    # Add empathy based on sentiment
+                    if sentiment_info and sentiment_info.get("sentiment") in ["frustrated", "negative"]:
+                        semantic_response = get_empathetic_prefix(command) + semantic_response
+                    if auto_speak:
+                        speak(semantic_response)
+                    return semantic_response
+            except Exception as e:
+                log_error(f"Semantic search error: {e}")
+        
+        # Fallback to exact match learning
         learned_response = get_learned_response(command)
         
         if learned_response:
@@ -247,10 +295,18 @@ def process_command(command: str, auto_speak: bool = True):
                 speak(learned_response)
             return learned_response
 
-        # 4️⃣ AI RESPONSE - Multiple options, controlled by AI_MODE
-        # AI_MODE comes from config: "lm_studio", "huggingface", or "local"
+        # 4️⃣ AI RESPONSE - Multiple options with ML Enhancement
+        # AI_MODE comes from config: "lm_studio", "huggingface", "local", "openai", "claude", "groq"
         mode = (AI_MODE or "self_training").lower()
         response = None
+        
+        # Get conversation history for context (if ML features available)
+        conversation_history = None
+        if ML_FEATURES_AVAILABLE and ENABLE_CONVERSATION_MEMORY:
+            try:
+                conversation_history = get_memory_history(session_id)
+            except Exception as e:
+                log_error(f"Memory history error: {e}")
 
         # Helper to try Hugging Face then fall back to local
         def _use_huggingface_or_local(prompt: str):
@@ -270,8 +326,17 @@ def process_command(command: str, auto_speak: bool = True):
             local_response = local_ai_response(prompt)
             log_info("Using local AI (rule-based, no external dependency)")
             return local_response
+        
+        # Try ML-based AI providers first (OpenAI, Claude, Groq)
+        if ML_FEATURES_AVAILABLE and mode in ["openai", "claude", "groq"]:
+            try:
+                response = get_provider_response(command, conversation_history, provider=mode)
+                if response:
+                    log_info(f"Using {mode} AI provider")
+            except Exception as e:
+                log_error(f"{mode} provider error: {e}")
 
-        if mode == "lm_studio":
+        if not response and mode == "lm_studio":
             # Prefer LM Studio, then Hugging Face, then local
             try:
                 from python_backend.lm_studio_ai import lm_studio_response
@@ -287,28 +352,39 @@ def process_command(command: str, auto_speak: bool = True):
             if not response:
                 response = _use_huggingface_or_local(command)
 
-        elif mode == "huggingface":
+        elif not response and mode == "huggingface":
             # Skip LM Studio completely, stay fully local/embedded
             response = _use_huggingface_or_local(command)
 
-        elif mode == "local":
+        elif not response and mode == "local":
             # Pure rule-based, no external model calls at all
             response = local_ai_response(command)
             log_info("Using local AI only (rule-based, fully offline)")
 
-        else:
+        elif not response:
             # Backward-compatible behaviour (old self_training mode):
-            # try LM Studio → Hugging Face → local
-            try:
-                from python_backend.lm_studio_ai import lm_studio_response
-                from python_backend.config import LM_STUDIO_MODEL
-                response = lm_studio_response(command, model=LM_STUDIO_MODEL)
-                if response:
-                    log_info(f"Using LM Studio model: {LM_STUDIO_MODEL}")
-            except ImportError:
-                log_info("LM Studio not available")
-            except Exception as e:
-                log_error(f"LM Studio error: {e}")
+            # Try ML providers → LM Studio → Hugging Face → local
+            
+            # First try ML providers if available
+            if ML_FEATURES_AVAILABLE:
+                try:
+                    response = get_provider_response(command, conversation_history)
+                    if response:
+                        log_info("Using ML AI provider (auto-selected)")
+                except Exception as e:
+                    log_error(f"ML provider error: {e}")
+            
+            if not response:
+                try:
+                    from python_backend.lm_studio_ai import lm_studio_response
+                    from python_backend.config import LM_STUDIO_MODEL
+                    response = lm_studio_response(command, model=LM_STUDIO_MODEL)
+                    if response:
+                        log_info(f"Using LM Studio model: {LM_STUDIO_MODEL}")
+                except ImportError:
+                    log_info("LM Studio not available")
+                except Exception as e:
+                    log_error(f"LM Studio error: {e}")
 
             if not response:
                 response = _use_huggingface_or_local(command)
@@ -324,11 +400,41 @@ def process_command(command: str, auto_speak: bool = True):
             # Never break core response path if emotion layer fails
             pass
         
+        # ========== ML ENHANCEMENT: Sentiment-based response ==========
+        if ML_FEATURES_AVAILABLE and sentiment_info:
+            try:
+                sentiment = sentiment_info.get("sentiment", "neutral")
+                
+                # Add empathetic prefix for frustrated users
+                if sentiment == "frustrated" and not response.startswith("I understand"):
+                    response = "I understand your frustration. " + response
+                
+                # Add clarification prefix for confused users
+                elif sentiment == "confused" and not response.startswith("Let me"):
+                    response = "Let me help clarify. " + response
+                    
+            except Exception as e:
+                log_error(f"Sentiment enhancement error: {e}")
+        
         if auto_speak:
             speak(response)
         
         # Save conversation for self-learning
         save_conversation(original_command, response)
+        
+        # ========== ML ENHANCEMENT: Save to conversation memory ==========
+        if ML_FEATURES_AVAILABLE and ENABLE_CONVERSATION_MEMORY:
+            try:
+                add_to_memory(original_command, response, session_id)
+            except Exception as e:
+                log_error(f"Memory save error: {e}")
+        
+        # Learn for semantic search
+        if ML_FEATURES_AVAILABLE and FEATURES.get("semantic_similarity"):
+            try:
+                learn_response(original_command, response)
+            except Exception as e:
+                log_error(f"Semantic learn error: {e}")
         
         return response
         

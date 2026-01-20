@@ -1,95 +1,32 @@
 {
-  "app_usage": {},
   "command_frequency": {
-    "test command": {
+    "हाउ आर यू": {
       "count": 1,
-      "last_used": "2026-01-15T22:22:21.737835"
-    },
-    "test": {
-      "count": 2,
-      "last_used": "2026-01-15T23:49:34.133199"
-    },
-    "hii": {
-      "count": 8,
-      "last_used": "2026-01-20T16:30:43.672884"
-    },
-    "है वे": {
-      "count": 1,
-      "last_used": "2026-01-15T22:45:44.575292"
-    },
-    "open youtube": {
-      "count": 2,
-      "last_used": "2026-01-16T01:57:23.891439"
-    },
-    "है वेद": {
-      "count": 4,
-      "last_used": "2026-01-16T01:54:39.685969"
-    },
-    "hey  veda": {
-      "count": 1,
-      "last_used": "2026-01-15T23:25:36.250303"
-    },
-    "आयुर्वेद": {
-      "count": 1,
-      "last_used": "2026-01-15T23:38:15.258335"
+      "last_used": "2026-01-20T21:06:29.258734"
     },
     "ओपन युटुब": {
-      "count": 1,
-      "last_used": "2026-01-16T01:56:23.279725"
+      "count": 3,
+      "last_used": "2026-01-20T22:24:10.061977"
     },
-    "play the song": {
-      "count": 1,
-      "last_used": "2026-01-16T01:57:56.712762"
+    "है वेद": {
+      "count": 3,
+      "last_used": "2026-01-20T22:23:46.213131"
     },
-    "play music": {
+    "tum kaun ho": {
       "count": 1,
-      "last_used": "2026-01-19T17:06:55.042425"
-    },
-    "hey veda": {
-      "count": 2,
-      "last_used": "2026-01-20T16:34:04.511527"
+      "last_used": "2026-01-20T21:24:35.569796"
     },
     "who are you?": {
-      "count": 2,
-      "last_used": "2026-01-20T15:47:11.804431"
-    },
-    "whor are you?": {
       "count": 1,
-      "last_used": "2026-01-20T15:51:20.085877"
+      "last_used": "2026-01-20T21:25:01.343322"
     },
-    "hiii": {
+    "hii": {
       "count": 1,
-      "last_used": "2026-01-20T15:58:30.010993"
+      "last_used": "2026-01-20T21:31:47.817499"
     },
-    "how are you": {
+    "हे गूगल": {
       "count": 1,
-      "last_used": "2026-01-20T16:31:03.181924"
-    },
-    "how are yoy?": {
-      "count": 1,
-      "last_used": "2026-01-20T16:33:33.889932"
-    },
-    "mere system pura control karo": {
-      "count": 1,
-      "last_used": "2026-01-20T16:34:20.873547"
-    },
-    "ok": {
-      "count": 1,
-      "last_used": "2026-01-20T16:34:54.846851"
-    },
-    "open this pc": {
-      "count": 1,
-      "last_used": "2026-01-20T16:35:09.030141"
-    },
-    "tum kaun h": {
-      "count": 1,
-      "last_used": "2026-01-20T16:49:38.916442"
-    },
-    "ek ganna cla do bas": {
-      "count": 1,
-      "last_used": "2026-01-20T17:02:46.626773"
+      "last_used": "2026-01-20T22:15:59.811787"
     }
-  },
-  "time_patterns": {},
-  "location_context": {}
+  }
 }

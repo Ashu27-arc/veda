@@ -339,6 +339,46 @@ function calibrateMic() {
 }
 
 // =======================
+// VOICE RESET (for troubleshooting)
+// =======================
+function resetVoice() {
+    const output = document.getElementById("output");
+    if (!output) return;
+
+    output.innerText = "🔄 Resetting voice settings to defaults...";
+    output.style.color = "#ff9800";
+
+    fetch("http://localhost:8000/voice/reset")
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP error! status: ${res.status}`);
+            }
+            return res.json();
+        })
+        .then(data => {
+            if (data.status === "success") {
+                output.innerText = "✅ Voice Settings Reset!\n\n" +
+                    data.message + "\n\n" +
+                    "Settings:\n" +
+                    `- Threshold: ${data.new_settings.energy_threshold}\n` +
+                    `- Status: ${data.new_settings.threshold_status}\n\n` +
+                    "Try speaking a command now!";
+                output.style.color = "#00ff00";
+            } else {
+                output.innerText = "❌ Reset Failed\n\n" + data.message;
+                output.style.color = "#ff4444";
+            }
+        })
+        .catch(error => {
+            console.error("❌ Reset error:", error);
+            output.innerText = "❌ Reset Error\n\n" +
+                "Could not reset voice settings.\n" +
+                "Please ensure VEDA AI server is running.";
+            output.style.color = "#ff4444";
+        });
+}
+
+// =======================
 // UTILITY FUNCTIONS
 // =======================
 

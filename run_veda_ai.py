@@ -31,24 +31,37 @@ def start_backend():
 def wait_for_server():
     """Wait for server to be fully ready"""
     import requests
-    max_attempts = 30
+    max_attempts = 60  # Increased timeout: 60 attempts × 1 second = 60 seconds
     for i in range(max_attempts):
         try:
-            response = requests.get("http://localhost:8000/health", timeout=1)
+            response = requests.get("http://localhost:8000/health", timeout=2)
             if response.status_code == 200:
                 print("✅ Server is ready!")
                 return True
-        except:
+        except requests.exceptions.ConnectionError:
+            # Server not yet accepting connections - this is expected during startup
             pass
-        time.sleep(0.5)
+        except requests.exceptions.Timeout:
+            # Server is responding but slow - keep waiting
+            pass
+        except Exception as e:
+            # Other errors - log but continue waiting
+            pass
+        
+        # Show progress every 5 seconds
+        if (i + 1) % 5 == 0:
+            print(f"⏳ Still waiting for server... ({i + 1}s)")
+        time.sleep(1)
     return False
 
 def open_ui():
     """Open UI in browser after server is ready"""
-    print("⏳ Waiting for server to be ready...")
+    print("⏳ Waiting for server to be ready (this may take up to 60 seconds)...")
     
     if not wait_for_server():
-        print("⚠️ Server took too long to start. Please manually open: http://localhost:8000")
+        print("⚠️ Server took longer than expected to start.")
+        print("📝 The server might still be initializing. Try opening: http://localhost:8000")
+        print("💡 If it doesn't work, check the console for errors above.")
         return
     
     print("🌐 Opening VEDA AI in browser...")

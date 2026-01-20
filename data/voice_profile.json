@@ -1,1 +1,8 @@
-{"energy_threshold": 71.00428772313859, "calibrated": true, "dynamic_enabled": true}
+{
+  "energy_threshold": 150,
+  "calibrated": true,
+  "dynamic_enabled": false,
+  "calibration_time": "2026-01-20 21:26:08",
+  "min_threshold": 150,
+  "max_threshold": 4000
+}

@@ -18,8 +18,35 @@ requests
 schedule
 apscheduler
 
-# Self-training AI (install as needed)
-# transformers  # For Hugging Face
-# torch  # For Hugging Face
-# datasets  # For training
-# Ollama: Download from https://ollama.ai
+# ============================================
+# AI/ML FEATURES (New in v6.0)
+# ============================================
+
+# AI Providers (install based on your preference)
+openai>=1.10.0           # For GPT-4, GPT-4o-mini
+anthropic>=0.18.0        # For Claude models
+groq>=0.4.0              # For fast Llama inference
+
+# ML Features
+sentence-transformers>=2.2.2    # Semantic search & intent classification
+numpy>=1.24.0                   # Required for embeddings
+
+# Optional: Advanced NLP
+# transformers>=4.36.0   # For advanced models
+# torch>=2.1.0           # PyTorch backend
+
+# ============================================
+# OPTIONAL DEPENDENCIES
+# ============================================
+
+# Offline Voice Recognition
+# vosk>=0.3.45           # Offline speech recognition
+# openai-whisper>=20231117  # Whisper for better accuracy
+
+# Testing
+# pytest>=7.4.0
+# pytest-asyncio>=0.23.0
+# httpx>=0.26.0
+
+# Note: LM Studio is a separate application
+# Download from: https://lmstudio.ai

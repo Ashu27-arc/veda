@@ -1,1 +1,16 @@
-[]
+[
+  {
+    "name": "System Health Check",
+    "type": "scheduled",
+    "data": {
+      "actions": [
+        "check_disk",
+        "check_memory",
+        "check_updates"
+      ]
+    },
+    "added_at": "2026-01-20T22:17:12.355802",
+    "status": "completed",
+    "completed_at": "2026-01-20T22:17:12.440143"
+  }
+]

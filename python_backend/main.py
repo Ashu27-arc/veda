@@ -186,6 +186,27 @@ def voice_stats():
         log_error(f"Stats error: {e}")
         return {"error": str(e)}
 
+@app.get("/voice/reset")
+def voice_reset():
+    """Reset voice settings to defaults - use if voice is not working"""
+    try:
+        from python_backend.voice_advanced import reset_voice_settings, get_voice_stats
+        success = reset_voice_settings()
+        
+        if success:
+            stats = get_voice_stats()
+            return {
+                "status": "success", 
+                "message": "Voice settings reset to defaults. Try speaking again.",
+                "new_settings": stats
+            }
+        else:
+            return {"status": "error", "message": "Failed to reset voice settings"}
+            
+    except Exception as e:
+        log_error(f"Voice reset error: {e}")
+        return {"status": "error", "message": str(e)}
+
 @app.get("/health")
 def health_check():
     """Health check endpoint"""

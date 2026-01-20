@@ -1,0 +1,26 @@
+{
+  "conversations": {
+    "default": [
+      {
+        "timestamp": "2026-01-20T22:23:09.371254",
+        "user": "हे गूगल",
+        "assistant": "Sir, I'm listening, Sir. I can help you with system control, opening applications, checking time/date, and more. What would you like me to do?",
+        "metadata": {}
+      },
+      {
+        "timestamp": "2026-01-20T22:23:49.633279",
+        "user": "है वेद",
+        "assistant": "Sir, What is this?",
+        "metadata": {}
+      },
+      {
+        "timestamp": "2026-01-20T22:24:11.327531",
+        "user": "ओपन युटुब",
+        "assistant": "Sir, This is the correct way.",
+        "metadata": {}
+      }
+    ]
+  },
+  "context": {},
+  "saved_at": "2026-01-20T22:24:11.327531"
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "question": "हे गूगल",
+    "answer": "Sir, I'm listening, Sir. I can help you with system control, opening applications, checking time/date, and more. What would you like me to do?",
+    "category": "learned",
+    "added_at": "2026-01-20T16:53:09"
+  },
+  {
+    "question": "है वेद",
+    "answer": "Sir, What is this?",
+    "category": "learned",
+    "added_at": "2026-01-20T16:53:49"
+  },
+  {
+    "question": "ओपन युटुब",
+    "answer": "Sir, This is the correct way.",
+    "category": "learned",
+    "added_at": "2026-01-20T16:54:11"
+  }
+]
