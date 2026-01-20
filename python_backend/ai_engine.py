@@ -106,16 +106,35 @@ def process_command(command: str, auto_speak: bool = True, session_id: str = Non
         command: User command string
         auto_speak: If True, automatically speak the response (default: True)
         session_id: Session ID for conversation memory (optional)
+        
+    Returns:
+        str: Response from VEDA AI
     """
-    # Get JARVIS personality instance
-    jarvis = get_jarvis()
+    # Early validation
+    if not command or not isinstance(command, str):
+        return "Please provide a valid command."
     
-    # Track command in context awareness
+    command = str(command).strip()
+    if len(command) == 0:
+        return "Empty command received. Please say something."
+    
+    if len(command) > 1000:
+        return "Command is too long. Please keep it under 1000 characters."
+    
+    # Get JARVIS personality instance (with error handling)
+    try:
+        jarvis = get_jarvis()
+    except Exception as e:
+        log_error(f"Failed to get JARVIS instance: {e}")
+        jarvis = None
+    
+    # Track command in context awareness (non-critical)
     try:
         context = get_context_awareness()
-        context.track_command(command)
+        if context:
+            context.track_command(command)
     except Exception as e:
-        log_error(f"Error tracking command: {e}")
+        log_warning(f"Context tracking failed (non-critical): {e}")
     
     # ========== ML FEATURES: Intent Classification & Sentiment ==========
     intent_info = None
@@ -123,26 +142,30 @@ def process_command(command: str, auto_speak: bool = True, session_id: str = Non
     
     if ML_FEATURES_AVAILABLE:
         try:
-            # Classify intent for better understanding
+            # Classify intent for better understanding (with timeout protection)
             intent_info = classify_intent(command)
-            log_info(f"Intent: {intent_info['intent']} (confidence: {intent_info['confidence']:.2f})")
+            if intent_info:
+                log_info(f"Intent: {intent_info.get('intent', 'unknown')} (confidence: {intent_info.get('confidence', 0):.2f})")
             
             # Analyze sentiment for empathetic responses
             sentiment_info = analyze_sentiment(command)
-            log_info(f"Sentiment: {sentiment_info['sentiment']}")
+            if sentiment_info:
+                log_info(f"Sentiment: {sentiment_info.get('sentiment', 'neutral')}")
         except Exception as e:
-            log_error(f"ML feature error: {e}")
-    
-    if not command or not isinstance(command, str):
-        return "Invalid command"
+            log_warning(f"ML feature error (using fallback): {e}")
+            intent_info = {"intent": "unknown", "confidence": 0}
+            sentiment_info = {"sentiment": "neutral", "confidence": 0}
     
     # Validate and sanitize input
     from python_backend.utils import sanitize_input, validate_command
     
     command = sanitize_input(command)
+    if not command:
+        return "Could not process your command. Please try again."
+        
     if not validate_command(command):
-        log_warning(f"Potentially malicious command blocked: {command}")
-        return "Invalid or potentially harmful command detected"
+        log_warning(f"Potentially malicious command blocked: {command[:50]}...")
+        return "I cannot process that command for security reasons."
     
     original_command = command
     command = command.lower().strip()
@@ -438,9 +461,24 @@ def process_command(command: str, auto_speak: bool = True, session_id: str = Non
         
         return response
         
+    except KeyboardInterrupt:
+        log_warning("Command processing interrupted")
+        return "Command processing was interrupted."
+    except MemoryError:
+        log_error("Memory error during command processing")
+        return "I ran out of memory processing that command. Please try a simpler request."
+    except TimeoutError:
+        log_error("Timeout during command processing")
+        return "The operation timed out. Please try again."
     except Exception as e:
-        log_error(f"Error processing command: {e}")
-        error_msg = "Sorry, I encountered an error processing your command."
-        if auto_speak:
-            speak(error_msg)
+        log_error(f"Error processing command: {type(e).__name__}: {e}")
+        error_msg = f"Sorry, I encountered an error: {type(e).__name__}. Please try again."
+        
+        # Don't try to speak if the error might be speech-related
+        if auto_speak and "speech" not in str(e).lower() and "audio" not in str(e).lower():
+            try:
+                speak(error_msg)
+            except Exception:
+                pass  # Ignore speech errors during error handling
+                
         return error_msg

@@ -4,10 +4,76 @@ import psutil
 import pyautogui
 import ctypes
 import winreg
+import re
+import shlex
 from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities
 from python_backend.logger import log_info, log_error, log_warning
 from python_backend.jarvis_personality import get_jarvis
+
+# ========== SECURITY: Path/Command Validation ==========
+BLOCKED_COMMANDS = {
+    'rm', 'del', 'format', 'mkfs', 'dd', 'fdisk', 'diskpart',
+    'reg', 'regedit', 'net', 'netsh', 'sc', 'runas', 'powershell',
+    'cmd', 'wmic', 'bcdedit', 'takeown', 'icacls', 'cacls',
+    'cipher', 'sfc', 'dism', 'bitsadmin', 'certutil'
+}
+
+BLOCKED_PATH_PATTERNS = [
+    r'\.\.', r'\.\./', r'\.\.\\',  # Path traversal
+    r'[<>|]',  # Shell redirection
+    r'[\x00-\x1f]',  # Control characters
+]
+
+def is_safe_path(path: str) -> bool:
+    """Validate path is safe (no traversal, no special chars)"""
+    if not path:
+        return False
+    
+    # Check for blocked patterns
+    for pattern in BLOCKED_PATH_PATTERNS:
+        if re.search(pattern, path):
+            log_warning(f"Blocked unsafe path: {path}")
+            return False
+    
+    # Check for absolute paths outside user directories
+    abs_path = os.path.abspath(path) if path else ""
+    user_home = os.path.expanduser("~")
+    
+    # Allow paths under user home, Program Files, and Windows
+    allowed_bases = [
+        user_home,
+        os.environ.get('PROGRAMFILES', 'C:\\Program Files'),
+        os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)'),
+        os.environ.get('LOCALAPPDATA', ''),
+        os.environ.get('APPDATA', ''),
+        'C:\\Windows\\System32',
+        'C:\\Windows',
+    ]
+    
+    return any(abs_path.startswith(base) for base in allowed_bases if base)
+
+def is_safe_app_name(app_name: str) -> bool:
+    """Validate app name is safe"""
+    if not app_name:
+        return False
+    
+    # Check length
+    if len(app_name) > 100:
+        return False
+    
+    # Check for blocked commands
+    app_lower = app_name.lower().strip()
+    if app_lower in BLOCKED_COMMANDS:
+        log_warning(f"Blocked dangerous command: {app_name}")
+        return False
+    
+    # Check for shell metacharacters
+    if re.search(r'[;&|`$<>"\'\\\n\r\t]', app_name):
+        log_warning(f"Blocked app name with special chars: {app_name}")
+        return False
+    
+    return True
 
 # =========================
 # APP FINDER - SMART APP DETECTION
@@ -130,37 +196,67 @@ def find_application(app_name):
 
 def open_application(app_name):
     """
-    Open any application by name
+    Open any application by name (with security validation)
     """
     jarvis = get_jarvis()
+    
+    # Security: Validate app name
+    if not is_safe_app_name(app_name):
+        log_warning(f"Blocked unsafe app request: {app_name}")
+        return f"{jarvis.owner_name}, I can't open that application for security reasons."
     
     # Find the application
     app_path = find_application(app_name)
     
     if app_path:
+        # Security: Validate the path
+        if not is_safe_path(app_path):
+            log_warning(f"Blocked unsafe app path: {app_path}")
+            return f"{jarvis.owner_name}, I can't open that application for security reasons."
+        
         try:
-            subprocess.Popen(app_path)
+            # Use shell=False for security (prevents command injection)
+            subprocess.Popen([app_path], shell=False)
             log_info(f"Successfully opened: {app_name}")
             return f"Opening {app_name}, {jarvis.owner_name}."
         except Exception as e:
             log_error(f"Failed to open {app_name}: {e}")
             return f"{jarvis.owner_name}, I found {app_name} but couldn't open it."
     else:
-        # Try as direct command (might be in PATH)
+        # Try as direct command (might be in PATH) - but only for safe names
         try:
-            subprocess.Popen(app_name)
-            log_info(f"Opened {app_name} as direct command")
-            return f"Opening {app_name}, {jarvis.owner_name}."
-        except:
-            log_error(f"Application not found: {app_name}")
-            return f"{jarvis.owner_name}, I couldn't find {app_name} on your system."
+            # Only allow .exe files or known safe commands
+            if app_name.lower().endswith('.exe') or app_name.lower() in ['notepad', 'calc', 'mspaint']:
+                subprocess.Popen([app_name], shell=False)
+                log_info(f"Opened {app_name} as direct command")
+                return f"Opening {app_name}, {jarvis.owner_name}."
+        except Exception:
+            pass
+        
+        log_error(f"Application not found: {app_name}")
+        return f"{jarvis.owner_name}, I couldn't find {app_name} on your system."
 
 
 def close_application(app_name):
     """
-    Close/kill an application by name
+    Close/kill an application by name (with security validation)
     """
     jarvis = get_jarvis()
+    
+    # Security: Validate app name
+    if not is_safe_app_name(app_name):
+        log_warning(f"Blocked unsafe close request: {app_name}")
+        return f"{jarvis.owner_name}, I can't close that application for security reasons."
+    
+    # Block closing critical system processes
+    critical_processes = {
+        'csrss', 'wininit', 'services', 'lsass', 'smss', 'svchost',
+        'winlogon', 'dwm', 'explorer', 'system', 'registry', 'conhost'
+    }
+    
+    if app_name.lower().replace('.exe', '') in critical_processes:
+        log_warning(f"Blocked attempt to close critical process: {app_name}")
+        return f"{jarvis.owner_name}, I can't close that system process."
     
     try:
         # Get the process name
@@ -170,29 +266,42 @@ def close_application(app_name):
         if not process_name.endswith('.exe'):
             process_name = f"{process_name}.exe"
         
-        # Try to kill the process
+        # Validate process name again
+        if not re.match(r'^[a-zA-Z0-9_\-\.]+\.exe$', process_name):
+            log_warning(f"Invalid process name format: {process_name}")
+            return f"{jarvis.owner_name}, invalid application name."
+        
+        # Try to kill the process using psutil (safer)
         killed = False
         for proc in psutil.process_iter(['name']):
             try:
-                if proc.info['name'].lower() == process_name:
-                    proc.kill()
+                if proc.info['name'] and proc.info['name'].lower() == process_name:
+                    proc.terminate()  # Use terminate instead of kill (more graceful)
                     killed = True
-                    log_info(f"Killed process: {process_name}")
+                    log_info(f"Terminated process: {process_name}")
             except (psutil.NoSuchProcess, psutil.AccessDenied):
                 continue
         
         if killed:
             return f"Closed {app_name}, {jarvis.owner_name}."
         else:
-            # Try using taskkill command
-            result = subprocess.run(['taskkill', '/F', '/IM', process_name], 
-                                  capture_output=True, text=True)
-            if result.returncode == 0:
-                log_info(f"Closed {app_name} using taskkill")
-                return f"Closed {app_name}, {jarvis.owner_name}."
-            else:
-                log_warning(f"Could not find running process: {app_name}")
-                return f"{jarvis.owner_name}, {app_name} is not running."
+            # Try using taskkill command with validated process name
+            try:
+                result = subprocess.run(
+                    ['taskkill', '/F', '/IM', process_name], 
+                    capture_output=True, 
+                    text=True,
+                    timeout=10,
+                    shell=False  # Security: Don't use shell
+                )
+                if result.returncode == 0:
+                    log_info(f"Closed {app_name} using taskkill")
+                    return f"Closed {app_name}, {jarvis.owner_name}."
+            except subprocess.TimeoutExpired:
+                log_error(f"Timeout closing {app_name}")
+            
+            log_warning(f"Could not find running process: {app_name}")
+            return f"{jarvis.owner_name}, {app_name} is not running."
                 
     except Exception as e:
         log_error(f"Error closing {app_name}: {e}")
@@ -203,15 +312,20 @@ def close_application(app_name):
 # VOLUME CONTROL
 # =========================
 def set_volume(action):
-    """Control system volume"""
+    """Control system volume with multiple fallback methods"""
+    jarvis = get_jarvis()
+    
+    # Method 1: Try pycaw with proper interface activation
     try:
-        jarvis = get_jarvis()
+        from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+        from ctypes import cast, POINTER
         
-        # Get all audio devices - returns AudioDevice object
+        # Get speakers and activate the interface
         devices = AudioUtilities.GetSpeakers()
-        
-        # Get volume interface directly from AudioDevice
-        volume = devices.EndpointVolume
+        interface = devices.Activate(
+            IAudioEndpointVolume._iid_, CLSCTX_ALL, None
+        )
+        volume = cast(interface, POINTER(IAudioEndpointVolume))
         
         # Get current volume level
         current = volume.GetMasterVolumeLevelScalar()
@@ -220,48 +334,72 @@ def set_volume(action):
             new_volume = min(current + 0.1, 1.0)
             volume.SetMasterVolumeLevelScalar(new_volume, None)
             log_info(f"Volume increased to {int(new_volume * 100)}%")
-            return f"Volume increased, {jarvis.owner_name}."
+            return f"Volume increased to {int(new_volume * 100)}%, {jarvis.owner_name}."
 
-        if action == "down":
+        elif action == "down":
             new_volume = max(current - 0.1, 0.0)
             volume.SetMasterVolumeLevelScalar(new_volume, None)
             log_info(f"Volume decreased to {int(new_volume * 100)}%")
-            return f"Volume decreased, {jarvis.owner_name}."
+            return f"Volume decreased to {int(new_volume * 100)}%, {jarvis.owner_name}."
 
-        if action == "mute":
+        elif action == "mute":
             volume.SetMute(1, None)
             log_info("Volume muted")
             return f"Volume muted, {jarvis.owner_name}."
             
-        if action == "unmute":
+        elif action == "unmute":
             volume.SetMute(0, None)
             log_info("Volume unmuted")
             return f"Volume unmuted, {jarvis.owner_name}."
+        
+        return f"Unknown volume action: {action}"
             
-    except AttributeError as e:
-        # Fallback to keyboard shortcuts if pycaw doesn't work
-        log_warning(f"Volume control via pycaw failed: {e}, using keyboard shortcuts")
-        try:
-            if action == "up":
-                pyautogui.press('volumeup')
-                return f"Volume increased, {jarvis.owner_name}."
-            elif action == "down":
-                pyautogui.press('volumedown')
-                return f"Volume decreased, {jarvis.owner_name}."
-            elif action == "mute":
-                pyautogui.press('volumemute')
-                return f"Volume muted, {jarvis.owner_name}."
-            elif action == "unmute":
-                pyautogui.press('volumemute')
-                return f"Volume unmuted, {jarvis.owner_name}."
-        except Exception as fallback_error:
-            log_error(f"Keyboard fallback also failed: {fallback_error}")
-            jarvis = get_jarvis()
-            return f"I apologize, {jarvis.owner_name}, but I couldn't control the volume."
     except Exception as e:
-        log_error(f"Volume control error: {e}")
-        jarvis = get_jarvis()
-        return f"I apologize, {jarvis.owner_name}, but I couldn't control the volume."
+        log_warning(f"Volume control via pycaw failed: {e}, trying keyboard shortcuts")
+    
+    # Method 2: Fallback to keyboard shortcuts
+    try:
+        if action == "up":
+            for _ in range(2):  # Press twice for noticeable change
+                pyautogui.press('volumeup')
+            log_info("Volume increased via keyboard")
+            return f"Volume increased, {jarvis.owner_name}."
+        elif action == "down":
+            for _ in range(2):
+                pyautogui.press('volumedown')
+            log_info("Volume decreased via keyboard")
+            return f"Volume decreased, {jarvis.owner_name}."
+        elif action in ["mute", "unmute"]:
+            pyautogui.press('volumemute')
+            log_info(f"Volume {action}d via keyboard")
+            return f"Volume {action}d, {jarvis.owner_name}."
+    except Exception as e:
+        log_error(f"Keyboard volume control failed: {e}")
+    
+    # Method 3: Try nircmd as last resort (if available)
+    try:
+        nircmd_actions = {
+            "up": "changesysvolume 6553",  # ~10% increase
+            "down": "changesysvolume -6553",
+            "mute": "mutesysvolume 1",
+            "unmute": "mutesysvolume 0"
+        }
+        if action in nircmd_actions:
+            result = subprocess.run(
+                ['nircmd', nircmd_actions[action]], 
+                capture_output=True, 
+                timeout=5,
+                shell=False
+            )
+            if result.returncode == 0:
+                log_info(f"Volume {action} via nircmd")
+                return f"Volume {action}, {jarvis.owner_name}."
+    except FileNotFoundError:
+        pass  # nircmd not installed
+    except Exception:
+        pass
+    
+    return f"I apologize, {jarvis.owner_name}, but I couldn't control the volume."
 
 
 # =========================

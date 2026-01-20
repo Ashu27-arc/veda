@@ -5,6 +5,7 @@ Advanced Voice Recognition System
 - Voice calibration
 - Command confirmation
 - PERMANENT FIX: Robust error handling and reliable recognition
+- Thread-safe speech synthesis
 """
 
 import speech_recognition as sr
@@ -12,19 +13,56 @@ import pyttsx3
 import json
 import os
 import time
+import threading
+from queue import Queue, Empty
 from python_backend.logger import log_info, log_error, log_warning
+
+# Thread lock for speech engine
+_speech_lock = threading.Lock()
+_speech_queue = Queue()
+_speech_thread = None
+_speech_running = False
 
 # Initialize recognizer with advanced settings
 recognizer = sr.Recognizer()
 
-# Initialize speech engine safely
-engine = None
-try:
-    engine = pyttsx3.init()
-    engine.setProperty("rate", 175)
-    engine.setProperty("volume", 1.0)
-except Exception as e:
-    log_warning(f"Speech engine init failed (will retry on speak): {e}")
+def _speech_worker():
+    """Background worker for thread-safe speech synthesis"""
+    global _speech_running
+    
+    while _speech_running:
+        try:
+            # Wait for text to speak
+            text = _speech_queue.get(timeout=1)
+            if text is None:  # Shutdown signal
+                break
+                
+            # Create fresh engine for each speech (avoids "run loop already started" error)
+            try:
+                local_engine = pyttsx3.init()
+                local_engine.setProperty("rate", 175)
+                local_engine.setProperty("volume", 1.0)
+                local_engine.say(text)
+                local_engine.runAndWait()
+                local_engine.stop()
+            except Exception as e:
+                log_warning(f"Speech synthesis error: {e}")
+            finally:
+                _speech_queue.task_done()
+                
+        except Empty:
+            continue
+        except Exception as e:
+            log_error(f"Speech worker error: {e}")
+
+def _ensure_speech_thread():
+    """Ensure speech worker thread is running"""
+    global _speech_thread, _speech_running
+    
+    if _speech_thread is None or not _speech_thread.is_alive():
+        _speech_running = True
+        _speech_thread = threading.Thread(target=_speech_worker, daemon=True)
+        _speech_thread.start()
 
 # Voice profile storage
 VOICE_PROFILE_PATH = "data/voice_profile.json"
@@ -317,39 +355,63 @@ def confirm_command(command):
     # Non-critical commands don't need confirmation
     return True
 
-def speak(text):
-    """Convert text to speech with better quality - with error handling"""
+def speak(text, blocking=False):
+    """Convert text to speech with better quality - thread-safe version
+    
+    Args:
+        text: Text to speak
+        blocking: If True, wait for speech to complete. If False, queue and return immediately.
+    """
+    if not text or not isinstance(text, str):
+        return
+        
+    text = str(text).strip()
+    if not text:
+        return
+    
     try:
-        print(f"🔊 VEDA AI: {text}")
-        log_info(f"Speaking: {text}")
-        
-        # Create a fresh engine instance to avoid "run loop already started" error
-        import pyttsx3
-        local_engine = None
-        
+        # Safely print (handle encoding issues)
         try:
-            local_engine = pyttsx3.init()
-            local_engine.setProperty("rate", 175)
-            local_engine.setProperty("volume", 1.0)
-            
-            # Speak the text
-            local_engine.say(text)
-            local_engine.runAndWait()
-        finally:
-            # Clean up properly
-            if local_engine:
-                try:
-                    local_engine.stop()
-                except:
-                    pass
+            print(f"VEDA AI: {text}")
+        except UnicodeEncodeError:
+            print(f"VEDA AI: {text.encode('ascii', 'replace').decode()}")
+        
+        log_info(f"Speaking: {text[:100]}...")
+        
+        # Ensure speech thread is running
+        _ensure_speech_thread()
+        
+        # Queue the text for speaking
+        _speech_queue.put(text)
+        
+        # If blocking, wait for speech to complete
+        if blocking:
+            _speech_queue.join()
         
     except RuntimeError as e:
-        # Common error: run loop already started
         log_warning(f"Speech engine busy: {e}")
-        print(f"⚠️ Speech busy (text was: {text})")
     except Exception as e:
         log_error(f"Speech synthesis error: {e}")
-        print(f"❌ Speech error: {e}")
+
+
+def speak_sync(text):
+    """Synchronous speech - blocks until complete (for critical messages)"""
+    speak(text, blocking=True)
+
+
+def stop_speech():
+    """Stop any ongoing speech"""
+    global _speech_running
+    
+    # Clear the queue
+    while not _speech_queue.empty():
+        try:
+            _speech_queue.get_nowait()
+            _speech_queue.task_done()
+        except Empty:
+            break
+    
+    log_info("Speech queue cleared")
 
 def test_voice_recognition():
     """Test voice recognition system"""

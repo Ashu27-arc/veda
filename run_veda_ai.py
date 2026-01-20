@@ -3,19 +3,36 @@ import threading
 import webbrowser
 import time
 import sys
+import os
 import requests
+
+# Fix encoding for Windows console (emoji support)
+if sys.platform == 'win32':
+    try:
+        sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass  # Older Python versions
+
+def safe_print(text):
+    """Print with fallback for encoding issues"""
+    try:
+        print(text)
+    except UnicodeEncodeError:
+        # Remove emojis and try again
+        import re
+        clean_text = re.sub(r'[^\x00-\x7F]+', '', text)
+        print(clean_text)
 
 def start_wake():
     """Start wake word detection in background"""
     try:
-        import sys
-        import os
         # Add project root to path
         sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
         from python_backend.wake_word import start_wake_word
         start_wake_word()
     except Exception as e:
-        print(f"Wake word detection failed: {e}")
+        safe_print(f"Wake word detection failed: {e}")
 
 def start_backend():
     """Start FastAPI backend server"""
@@ -30,13 +47,12 @@ def start_backend():
 
 def wait_for_server():
     """Wait for server to be fully ready"""
-    import requests
     max_attempts = 60  # Increased timeout: 60 attempts × 1 second = 60 seconds
     for i in range(max_attempts):
         try:
             response = requests.get("http://localhost:8000/health", timeout=2)
             if response.status_code == 200:
-                print("✅ Server is ready!")
+                safe_print("[OK] Server is ready!")
                 return True
         except requests.exceptions.ConnectionError:
             # Server not yet accepting connections - this is expected during startup
@@ -44,53 +60,51 @@ def wait_for_server():
         except requests.exceptions.Timeout:
             # Server is responding but slow - keep waiting
             pass
-        except Exception as e:
+        except Exception:
             # Other errors - log but continue waiting
             pass
         
         # Show progress every 5 seconds
         if (i + 1) % 5 == 0:
-            print(f"⏳ Still waiting for server... ({i + 1}s)")
+            safe_print(f"[...] Still waiting for server... ({i + 1}s)")
         time.sleep(1)
     return False
 
 def open_ui():
     """Open UI in browser after server is ready"""
-    print("⏳ Waiting for server to be ready (this may take up to 60 seconds)...")
+    safe_print("[...] Waiting for server to be ready (this may take up to 60 seconds)...")
     
     if not wait_for_server():
-        print("⚠️ Server took longer than expected to start.")
-        print("📝 The server might still be initializing. Try opening: http://localhost:8000")
-        print("💡 If it doesn't work, check the console for errors above.")
+        safe_print("[!] Server took longer than expected to start.")
+        safe_print("[i] The server might still be initializing. Try opening: http://localhost:8000")
+        safe_print("[?] If it doesn't work, check the console for errors above.")
         return
     
-    print("🌐 Opening VEDA AI in browser...")
+    safe_print("[>] Opening VEDA AI in browser...")
     
     # Try multiple methods to open browser
     browser_opened = False
     
     # Method 1: Windows start command (most reliable on Windows)
     try:
-        import os
         os.system("start http://localhost:8000")
-        print("✅ Browser opened using Windows command!")
+        safe_print("[OK] Browser opened using Windows command!")
         browser_opened = True
     except Exception as e:
-        print(f"⚠️ Windows start failed: {e}")
+        safe_print(f"[!] Windows start failed: {e}")
     
     # Method 2: Python webbrowser module
     if not browser_opened:
         try:
             webbrowser.open("http://localhost:8000", new=2)  # new=2 opens in new tab
-            print("✅ Browser opened using webbrowser module!")
+            safe_print("[OK] Browser opened using webbrowser module!")
             browser_opened = True
         except Exception as e:
-            print(f"⚠️ Webbrowser module failed: {e}")
+            safe_print(f"[!] Webbrowser module failed: {e}")
     
     # Method 3: Direct browser executable
     if not browser_opened:
         try:
-            import subprocess
             # Try Chrome first
             chrome_paths = [
                 r"C:\Program Files\Google\Chrome\Application\chrome.exe",
@@ -99,19 +113,21 @@ def open_ui():
             for chrome_path in chrome_paths:
                 if os.path.exists(chrome_path):
                     subprocess.Popen([chrome_path, "http://localhost:8000"])
-                    print("✅ Browser opened using Chrome!")
+                    safe_print("[OK] Browser opened using Chrome!")
                     browser_opened = True
                     break
         except Exception as e:
-            print(f"⚠️ Direct Chrome launch failed: {e}")
+            safe_print(f"[!] Direct Chrome launch failed: {e}")
     
     if not browser_opened:
-        print("⚠️ Could not automatically open browser")
-        print("📝 Please manually open: http://localhost:8000")
+        safe_print("[!] Could not automatically open browser")
+        safe_print("[i] Please manually open: http://localhost:8000")
 
 if __name__ == "__main__":
-    print("🚀 Starting VEDA AI...")
-    print("⏳ Please wait while the server initializes...")
+    safe_print("=" * 50)
+    safe_print("VEDA AI - Starting...")
+    safe_print("=" * 50)
+    safe_print("[...] Please wait while the server initializes...")
     
     # Start backend server
     threading.Thread(target=start_backend, daemon=True).start()
@@ -122,14 +138,16 @@ if __name__ == "__main__":
     # Open UI
     open_ui()
     
-    print("✅ VEDA AI is running!")
-    print("🌐 Browser should open automatically at http://localhost:8000")
-    print("📝 If browser doesn't open, manually visit: http://localhost:8000")
-    print("⏹️  Press Ctrl+C to stop")
+    safe_print("=" * 50)
+    safe_print("[OK] VEDA AI is running!")
+    safe_print("[>] Browser should open automatically at http://localhost:8000")
+    safe_print("[i] If browser doesn't open, manually visit: http://localhost:8000")
+    safe_print("[X] Press Ctrl+C to stop")
+    safe_print("=" * 50)
     
     # Keep main thread alive
     try:
         while True:
             time.sleep(1)
     except KeyboardInterrupt:
-        print("\nShutting down VEDA AI...")
+        safe_print("\n[...] Shutting down VEDA AI...")

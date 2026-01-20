@@ -1,8 +1,32 @@
 import cv2
-import mediapipe as mp
 import pyautogui
 import math
 from python_backend.logger import log_info, log_error, log_warning
+
+# Try to import mediapipe with compatibility handling
+mp = None
+mp_hands = None
+mp_drawing = None
+
+try:
+    import mediapipe
+    mp = mediapipe
+    
+    # Check for solutions attribute (different versions have different structures)
+    if hasattr(mediapipe, 'solutions'):
+        mp_hands = mediapipe.solutions.hands
+        mp_drawing = mediapipe.solutions.drawing_utils
+    else:
+        # Try alternative import for newer versions
+        try:
+            from mediapipe.python.solutions import hands as mp_hands_module
+            from mediapipe.python.solutions import drawing_utils as mp_drawing_module
+            mp_hands = mp_hands_module
+            mp_drawing = mp_drawing_module
+        except ImportError:
+            log_warning("MediaPipe solutions not available in this version")
+except ImportError as e:
+    log_warning(f"MediaPipe not installed: {e}")
 
 class GestureRecognizer:
     """Recognizes hand gestures using MediaPipe landmarks"""
@@ -124,20 +148,34 @@ def execute_gesture_action(gesture, last_gesture):
 
 def start_gesture_control():
     """Start gesture control with real-time hand tracking"""
+    global mp_hands, mp_drawing
+    
     cam = None
+    hands = None
+    
     try:
         log_info("Starting gesture control...")
         
-        mp_hands = mp.solutions.hands
-        mp_drawing = mp.solutions.drawing_utils
+        # Check if MediaPipe is available
+        if mp_hands is None or mp_drawing is None:
+            log_warning("Gesture control disabled: MediaPipe not properly installed")
+            log_info("To enable gesture control, install: pip install mediapipe==0.10.9")
+            return
         
-        hands = mp_hands.Hands(
-            max_num_hands=1,
-            min_detection_confidence=0.7,
-            min_tracking_confidence=0.5
-        )
+        # Create hands detector
+        try:
+            hands = mp_hands.Hands(
+                max_num_hands=1,
+                min_detection_confidence=0.7,
+                min_tracking_confidence=0.5
+            )
+        except Exception as e:
+            log_error(f"Failed to initialize MediaPipe Hands: {e}")
+            return
         
         recognizer = GestureRecognizer()
+        
+        # Try to open camera
         cam = cv2.VideoCapture(0)
         
         if not cam.isOpened():
@@ -149,81 +187,105 @@ def start_gesture_control():
         gesture_cooldown = 0
         last_gesture = None
         current_gesture = None
+        frame_count = 0
+        max_errors = 10
+        error_count = 0
 
         while True:
-            ret, frame = cam.read()
-            if not ret:
-                log_error("Failed to read from camera")
-                break
-            
-            # Flip frame for mirror effect
-            frame = cv2.flip(frame, 1)
-            h, w, c = frame.shape
-            
-            # Convert to RGB for MediaPipe
-            rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            result = hands.process(rgb)
+            try:
+                ret, frame = cam.read()
+                if not ret:
+                    error_count += 1
+                    if error_count > max_errors:
+                        log_error("Too many camera read errors, stopping gesture control")
+                        break
+                    continue
+                
+                error_count = 0  # Reset on successful read
+                frame_count += 1
+                
+                # Flip frame for mirror effect
+                frame = cv2.flip(frame, 1)
+                h, w, c = frame.shape
+                
+                # Convert to RGB for MediaPipe
+                rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                result = hands.process(rgb)
 
-            # Process hand landmarks
-            if result.multi_hand_landmarks:
-                for hand_landmarks in result.multi_hand_landmarks:
-                    # Draw hand landmarks
-                    mp_drawing.draw_landmarks(
-                        frame, 
-                        hand_landmarks, 
-                        mp_hands.HAND_CONNECTIONS
-                    )
-                    
-                    # Recognize gesture
-                    if gesture_cooldown == 0:
-                        current_gesture = recognizer.recognize_gesture(hand_landmarks.landmark)
+                # Process hand landmarks
+                if result.multi_hand_landmarks:
+                    for hand_landmarks in result.multi_hand_landmarks:
+                        # Draw hand landmarks
+                        try:
+                            mp_drawing.draw_landmarks(
+                                frame, 
+                                hand_landmarks, 
+                                mp_hands.HAND_CONNECTIONS
+                            )
+                        except Exception:
+                            pass  # Drawing failed, continue anyway
                         
+                        # Recognize gesture
+                        if gesture_cooldown == 0:
+                            current_gesture = recognizer.recognize_gesture(hand_landmarks.landmark)
+                            
+                            if current_gesture:
+                                execute_gesture_action(current_gesture, last_gesture)
+                                last_gesture = current_gesture
+                                gesture_cooldown = 30  # 30 frames cooldown
+                        
+                        # Display gesture name
                         if current_gesture:
-                            execute_gesture_action(current_gesture, last_gesture)
-                            last_gesture = current_gesture
-                            gesture_cooldown = 30  # 30 frames cooldown
+                            gesture_name = recognizer.gesture_names.get(current_gesture, current_gesture)
+                            cv2.putText(frame, f"Gesture: {gesture_name}", 
+                                      (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 
+                                      1, (0, 255, 0), 2)
+                else:
+                    current_gesture = None
+                    last_gesture = None
+                
+                # Cooldown counter
+                if gesture_cooldown > 0:
+                    gesture_cooldown -= 1
+                    cv2.putText(frame, f"Cooldown: {gesture_cooldown}", 
+                              (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 
+                              0.6, (0, 165, 255), 2)
+                
+                # Instructions and FPS
+                cv2.putText(frame, f"Press ESC to exit | Frame: {frame_count}", 
+                          (10, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 
+                          0.5, (255, 255, 255), 1)
+                
+                cv2.imshow("VEDA AI Gesture Control", frame)
+                
+                # ESC to exit, also check for window close
+                key = cv2.waitKey(1) & 0xFF
+                if key == 27 or cv2.getWindowProperty("VEDA AI Gesture Control", cv2.WND_PROP_VISIBLE) < 1:
+                    log_info("Gesture control stopped by user")
+                    break
                     
-                    # Display gesture name
-                    if current_gesture:
-                        gesture_name = recognizer.gesture_names.get(current_gesture, current_gesture)
-                        cv2.putText(frame, f"Gesture: {gesture_name}", 
-                                  (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 
-                                  1, (0, 255, 0), 2)
-            else:
-                current_gesture = None
-                last_gesture = None
-            
-            # Cooldown counter
-            if gesture_cooldown > 0:
-                gesture_cooldown -= 1
-                cv2.putText(frame, f"Cooldown: {gesture_cooldown}", 
-                          (10, 90), cv2.FONT_HERSHEY_SIMPLEX, 
-                          0.6, (0, 165, 255), 2)
-            
-            # Instructions
-            cv2.putText(frame, "Press ESC to exit", 
-                      (10, h - 20), cv2.FONT_HERSHEY_SIMPLEX, 
-                      0.5, (255, 255, 255), 1)
-            
-            cv2.imshow("VEDA AI Gesture Control", frame)
-            
-            # ESC to exit
-            if cv2.waitKey(1) == 27:
-                log_info("Gesture control stopped by user")
-                break
+            except cv2.error as e:
+                log_warning(f"OpenCV error in frame {frame_count}: {e}")
+                continue
                 
     except AttributeError as e:
         log_warning(f"Gesture control disabled: MediaPipe version issue - {e}")
     except Exception as e:
         log_error(f"Gesture control error: {e}")
     finally:
+        # Cleanup
+        if hands is not None:
+            try:
+                hands.close()
+            except Exception:
+                pass
         if cam is not None:
             try:
                 cam.release()
-            except:
+            except Exception:
                 pass
         try:
             cv2.destroyAllWindows()
-        except:
+        except Exception:
             pass
         log_info("Gesture control cleanup completed")

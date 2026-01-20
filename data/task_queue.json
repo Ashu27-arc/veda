@@ -12,5 +12,18 @@
     "added_at": "2026-01-20T22:17:12.355802",
     "status": "completed",
     "completed_at": "2026-01-20T22:17:12.440143"
+  },
+  {
+    "name": "Auto Cleanup",
+    "type": "scheduled",
+    "data": {
+      "actions": [
+        "clear_temp",
+        "organize_downloads"
+      ]
+    },
+    "added_at": "2026-01-20T23:00:20.457535",
+    "status": "completed",
+    "completed_at": "2026-01-20T23:00:20.467413"
   }
 ]

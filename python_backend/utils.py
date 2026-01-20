@@ -3,24 +3,46 @@ Utility functions for VEDA AI
 Includes security, validation, and helper functions
 """
 import socket
+import re
+import html
+from typing import Optional
 
-def is_online():
+def is_online(timeout: float = 2.0) -> bool:
     """Check if internet connection is available"""
-    try:
-        socket.create_connection(("8.8.8.8", 53), timeout=2)
-        return True
-    except OSError:
-        return False
+    # Try multiple endpoints for reliability
+    endpoints = [
+        ("8.8.8.8", 53),      # Google DNS
+        ("1.1.1.1", 53),      # Cloudflare DNS
+        ("208.67.222.222", 53)  # OpenDNS
+    ]
+    
+    for host, port in endpoints:
+        try:
+            socket.create_connection((host, port), timeout=timeout)
+            return True
+        except OSError:
+            continue
+    
+    return False
 
-def sanitize_input(text):
+def sanitize_input(text: Optional[str]) -> str:
     """Sanitize user input to prevent injection attacks"""
     if not text or not isinstance(text, str):
         return ""
     
-    # Remove potentially dangerous characters
-    dangerous_chars = [';', '&', '|', '`', '$', '<', '>', '"', "'", '\\', '\n', '\r', '\t']
+    # Remove null bytes (can bypass some filters)
+    text = text.replace('\x00', '')
+    
+    # Remove potentially dangerous shell characters
+    dangerous_chars = [';', '&', '|', '`', '$', '<', '>', '\\', '\n', '\r', '\t', '\0']
     for char in dangerous_chars:
         text = text.replace(char, '')
+    
+    # Remove Unicode direction override characters (can be used to hide malicious content)
+    text = re.sub(r'[\u202A-\u202E\u2066-\u2069\u200E\u200F]', '', text)
+    
+    # Normalize whitespace
+    text = ' '.join(text.split())
     
     # Limit length
     max_length = 500
@@ -29,7 +51,13 @@ def sanitize_input(text):
     
     return text.strip()
 
-def validate_command(command):
+def sanitize_for_html(text: Optional[str]) -> str:
+    """Sanitize text for safe HTML display"""
+    if not text:
+        return ""
+    return html.escape(str(text))
+
+def validate_command(command: Optional[str]) -> bool:
     """Validate command for security - prevents malicious commands"""
     if not command or not isinstance(command, str):
         return False
@@ -38,19 +66,72 @@ def validate_command(command):
     if len(command) > 500:
         return False
     
-    # Check for malicious patterns
-    malicious_patterns = [
-        'rm -rf', 'del /f', 'format', 'mkfs',
-        'dd if=', ':(){ :|:& };:', 'fork bomb',
-        'sudo', 'chmod 777', 'wget', 'curl http',
-        'powershell -enc', 'cmd /c', 'eval(',
-        'exec(', '__import__', 'os.system', 'subprocess.call',
-        'rmdir /s', 'deltree', 'fdisk'
-    ]
+    # Check minimum length (avoid empty/trivial commands)
+    if len(command.strip()) < 1:
+        return False
     
     command_lower = command.lower()
+    
+    # Check for malicious patterns - expanded list
+    malicious_patterns = [
+        # Unix/Linux dangerous commands
+        'rm -rf', 'rm -fr', 'rm -r', 'rmdir',
+        ':(){ :|:& };:', 'fork bomb',
+        'dd if=', 'mkfs', 'fdisk',
+        'chmod 777', 'chown', 'sudo',
+        'wget ', 'curl http', 'curl -o',
+        
+        # Windows dangerous commands
+        'del /f', 'del /s', 'del /q',
+        'format c:', 'format d:', 'format e:',
+        'rd /s', 'rmdir /s', 'deltree',
+        'diskpart', 'bcdedit', 'sfc /scannow',
+        
+        # Code injection attempts
+        'eval(', 'exec(', 'compile(',
+        '__import__', '__builtins__',
+        'os.system', 'os.popen', 'os.exec',
+        'subprocess.call', 'subprocess.run', 'subprocess.popen',
+        'system(', 'shell_exec', 'passthru',
+        
+        # PowerShell/CMD injection
+        'powershell -enc', 'powershell -e ', 'powershell -w hidden',
+        'cmd /c', 'cmd.exe /c', 'cmd /k',
+        'wscript', 'cscript', 'mshta',
+        
+        # Registry manipulation
+        'reg add', 'reg delete', 'regedit',
+        
+        # Network attacks
+        'netcat', 'nc -e', 'ncat',
+        'certutil -urlcache',
+        'bitsadmin /transfer',
+        
+        # Base64 encoded commands (common evasion)
+        'base64 -d', 'base64 --decode',
+        
+        # SQL injection patterns (if command is used in DB)
+        "'; drop", '"; drop', "' or 1=1", '" or 1=1',
+        'union select', 'union all select',
+    ]
+    
     for pattern in malicious_patterns:
         if pattern in command_lower:
+            return False
+    
+    # Check for suspicious character combinations
+    suspicious_patterns = [
+        r'\$\(.*\)',  # Command substitution
+        r'`.*`',      # Backtick command substitution
+        r'\|.*\|',    # Pipe chains
+        r'>\s*/dev/', # Redirect to device
+        r'<\s*/dev/', # Read from device
+        r'&&\s*&&',   # Multiple AND operators
+        r'\|\|\s*\|\|', # Multiple OR operators
+    ]
+    
+    for pattern in suspicious_patterns:
+        if re.search(pattern, command_lower):
             return False
     
     return True

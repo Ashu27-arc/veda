@@ -1,52 +1,72 @@
-fastapi
-uvicorn[standard]
-speechrecognition
-pyttsx3
-pyaudio
-pyautogui
-python-dotenv
-pycaw
-comtypes
-pvporcupine
-mediapipe
-opencv-python
-pillow
-pystray
-psutil
-websockets
-requests
-schedule
-apscheduler
+# ============================================
+# VEDA AI - Requirements (v5.0.0)
+# ============================================
+
+# Core Web Framework
+fastapi>=0.109.0,<0.120.0
+uvicorn[standard]>=0.27.0,<0.35.0
+
+# Voice Recognition & TTS
+SpeechRecognition>=3.10.0,<4.0.0
+pyttsx3>=2.90,<3.0.0
+PyAudio>=0.2.14  # May need manual install on Windows
+
+# System Control
+pyautogui>=0.9.54,<1.0.0
+pycaw>=20230407
+comtypes>=1.2.0,<2.0.0
+psutil>=5.9.0,<6.0.0
+
+# Configuration
+python-dotenv>=1.0.0,<2.0.0
+
+# Wake Word Detection
+pvporcupine>=3.0.0,<4.0.0
+
+# Gesture Control (optional - may have compatibility issues)
+mediapipe>=0.10.9,<0.11.0  # Pin to stable version
+opencv-python>=4.8.0,<5.0.0
+
+# UI & Utilities
+pillow>=10.0.0,<11.0.0
+pystray>=0.19.0,<1.0.0
+websockets>=12.0,<13.0
+requests>=2.31.0,<3.0.0
+
+# Task Scheduling
+schedule>=1.2.0,<2.0.0
+APScheduler>=3.10.0,<4.0.0
 
 # ============================================
-# AI/ML FEATURES (New in v6.0)
+# AI/ML FEATURES (v6.0+)
 # ============================================
 
 # AI Providers (install based on your preference)
-openai>=1.10.0           # For GPT-4, GPT-4o-mini
-anthropic>=0.18.0        # For Claude models
-groq>=0.4.0              # For fast Llama inference
+openai>=1.10.0,<2.0.0           # For GPT-4, GPT-4o-mini
+anthropic>=0.18.0,<1.0.0        # For Claude models
+groq>=0.4.0,<1.0.0              # For fast Llama inference
 
 # ML Features
-sentence-transformers>=2.2.2    # Semantic search & intent classification
-numpy>=1.24.0                   # Required for embeddings
+sentence-transformers>=2.2.2,<3.0.0    # Semantic search & intent classification
+numpy>=1.24.0,<2.0.0                   # Required for embeddings
 
-# Optional: Advanced NLP
-# transformers>=4.36.0   # For advanced models
-# torch>=2.1.0           # PyTorch backend
+# Hugging Face Transformers (for local AI)
+transformers>=4.36.0,<5.0.0
+torch>=2.1.0,<3.0.0
 
 # ============================================
 # OPTIONAL DEPENDENCIES
+# Uncomment to install
 # ============================================
 
 # Offline Voice Recognition
-# vosk>=0.3.45           # Offline speech recognition
-# openai-whisper>=20231117  # Whisper for better accuracy
+# vosk>=0.3.45,<0.4.0           # Offline speech recognition
+# openai-whisper>=20231117      # Whisper for better accuracy
 
 # Testing
-# pytest>=7.4.0
-# pytest-asyncio>=0.23.0
-# httpx>=0.26.0
+# pytest>=7.4.0,<8.0.0
+# pytest-asyncio>=0.23.0,<1.0.0
+# httpx>=0.26.0,<1.0.0
 
 # Note: LM Studio is a separate application
 # Download from: https://lmstudio.ai

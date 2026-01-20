@@ -3,9 +3,89 @@
 // =======================
 let ws;
 let reconnectAttempts = 0;
-const maxReconnectAttempts = 5;
+const maxReconnectAttempts = 10;
 let isListening = false;
 let cameraStream = null;
+let reconnectTimeout = null;
+let chatHistory = [];
+const CHAT_HISTORY_KEY = 'veda_chat_history';
+const MAX_CHAT_HISTORY = 100;
+
+// =======================
+// CHAT HISTORY PERSISTENCE
+// =======================
+function loadChatHistory() {
+    try {
+        const saved = localStorage.getItem(CHAT_HISTORY_KEY);
+        if (saved) {
+            chatHistory = JSON.parse(saved);
+            // Display saved history
+            displaySavedHistory();
+        }
+    } catch (e) {
+        console.warn('Failed to load chat history:', e);
+        chatHistory = [];
+    }
+}
+
+function saveChatHistory() {
+    try {
+        // Keep only last MAX_CHAT_HISTORY entries
+        if (chatHistory.length > MAX_CHAT_HISTORY) {
+            chatHistory = chatHistory.slice(-MAX_CHAT_HISTORY);
+        }
+        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(chatHistory));
+    } catch (e) {
+        console.warn('Failed to save chat history:', e);
+    }
+}
+
+function addToChatHistory(command, response, type = 'command') {
+    chatHistory.push({
+        timestamp: new Date().toISOString(),
+        command: command,
+        response: response,
+        type: type
+    });
+    saveChatHistory();
+}
+
+function displaySavedHistory() {
+    const output = document.getElementById("output");
+    if (!output || chatHistory.length === 0) return;
+    
+    // Show only last 5 messages on load
+    const recentHistory = chatHistory.slice(-5);
+    let historyText = "--- Recent History ---\n\n";
+    
+    recentHistory.forEach(entry => {
+        if (entry.type !== 'greeting') {
+            historyText += `You: ${entry.command}\n`;
+            historyText += `VEDA: ${entry.response}\n\n`;
+        }
+    });
+    
+    historyText += "--- End History ---\n\nReady for new commands!";
+    output.innerText = historyText;
+    output.style.color = "#00e5ff";
+}
+
+function clearChatHistory() {
+    chatHistory = [];
+    localStorage.removeItem(CHAT_HISTORY_KEY);
+    const output = document.getElementById("output");
+    if (output) {
+        output.innerText = "Chat history cleared!";
+        output.style.color = "#00ff00";
+    }
+}
+
+// Load history on page load
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadChatHistory);
+} else {
+    loadChatHistory();
+}
 
 // =======================
 // STARFIELD ANIMATION
@@ -82,46 +162,83 @@ if (document.readyState === 'loading') {
 // =======================
 // WEBSOCKET CONNECTION
 // =======================
+function getReconnectDelay() {
+    // Exponential backoff: 1s, 2s, 4s, 8s, 16s, 30s max
+    const baseDelay = 1000;
+    const maxDelay = 30000;
+    const delay = Math.min(baseDelay * Math.pow(2, reconnectAttempts), maxDelay);
+    // Add some jitter (±10%)
+    const jitter = delay * 0.1 * (Math.random() * 2 - 1);
+    return Math.round(delay + jitter);
+}
+
 function connectWebSocket() {
+    // Clear any existing reconnect timeout
+    if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+        reconnectTimeout = null;
+    }
+    
     try {
+        // Close existing connection if any
+        if (ws && ws.readyState !== WebSocket.CLOSED) {
+            ws.close();
+        }
+        
         ws = new WebSocket("ws://localhost:8000/ws");
 
         ws.onopen = () => {
-            console.log("✅ Connected to VEDA AI");
+            console.log("Connected to VEDA AI");
             const output = document.getElementById("output");
             if (output) {
-                output.innerText = "✅ Connecting to VEDA...";
+                output.innerText = "Connected to VEDA AI...";
                 output.style.color = "#00ff00";
             }
             reconnectAttempts = 0;
+            
+            // Update connection status indicator if exists
+            updateConnectionStatus(true);
         };
 
         ws.onerror = (error) => {
-            console.error("❌ WebSocket error:", error);
-            const output = document.getElementById("output");
-            if (output) {
-                output.innerText = "❌ Connection error. Trying to reconnect...";
-                output.style.color = "#ff4444";
-            }
+            console.error("WebSocket error:", error);
+            updateConnectionStatus(false);
         };
 
-        ws.onclose = () => {
-            console.log("⚠️ Disconnected from VEDA AI");
+        ws.onclose = (event) => {
+            console.log("Disconnected from VEDA AI", event.code, event.reason);
+            updateConnectionStatus(false);
+            
             const output = document.getElementById("output");
-            if (output) {
-                output.innerText = "⚠️ Disconnected. Reconnecting...";
-                output.style.color = "#ff9800";
+            
+            // Don't reconnect if closed normally (code 1000) or if server rejected
+            if (event.code === 1000 || event.code === 1013) {
+                if (output) {
+                    output.innerText = event.code === 1013 
+                        ? "Server is busy. Please try again later."
+                        : "Disconnected from VEDA AI.";
+                    output.style.color = "#ff9800";
+                }
+                return;
             }
 
-            // Try to reconnect
+            // Try to reconnect with exponential backoff
             if (reconnectAttempts < maxReconnectAttempts) {
+                const delay = getReconnectDelay();
                 reconnectAttempts++;
-                setTimeout(connectWebSocket, 2000);
+                
+                if (output) {
+                    output.innerText = `Disconnected. Reconnecting in ${Math.round(delay/1000)}s... (attempt ${reconnectAttempts}/${maxReconnectAttempts})`;
+                    output.style.color = "#ff9800";
+                }
+                
+                reconnectTimeout = setTimeout(connectWebSocket, delay);
             } else {
                 if (output) {
-                    output.innerText = "❌ Connection lost. Please refresh the page or restart VEDA AI server.";
+                    output.innerText = "Connection lost. Click 'Reconnect' or refresh the page.";
                     output.style.color = "#ff4444";
                 }
+                showReconnectButton();
             }
         };
 
@@ -133,18 +250,25 @@ function connectWebSocket() {
                 const data = JSON.parse(event.data);
 
                 if (data.error) {
-                    output.innerText = "❌ Error: " + data.error;
+                    output.innerText = "Error: " + data.error;
                     output.style.color = "#ff4444";
+                    
+                    // Handle rate limiting
+                    if (data.retry_after) {
+                        output.innerText += `\n\nPlease wait ${data.retry_after} seconds.`;
+                    }
                 } else if (data.type === "greeting") {
                     // Handle initial greeting from VEDA
-                    output.innerText = "🤖 VEDA: " + data.response + "\n\n✅ Ready for commands!";
+                    output.innerText = "VEDA: " + data.response + "\n\nReady for commands!";
                     output.style.color = "#00e5ff";
+                    addToChatHistory("", data.response, "greeting");
                 } else if (data.response) {
                     // Show command and response
                     if (data.command === "system_greeting") {
-                        output.innerText = "🤖 VEDA: " + data.response;
+                        output.innerText = "VEDA: " + data.response;
                     } else {
-                        output.innerText = "You: " + data.command + "\n\n🤖 VEDA: " + data.response;
+                        output.innerText = "You: " + data.command + "\n\nVEDA: " + data.response;
+                        addToChatHistory(data.command, data.response);
                     }
                     output.style.color = "#00e5ff";
                 } else {
@@ -158,13 +282,35 @@ function connectWebSocket() {
             }
         };
     } catch (error) {
-        console.error("❌ Failed to create WebSocket:", error);
+        console.error("Failed to create WebSocket:", error);
         const output = document.getElementById("output");
         if (output) {
-            output.innerText = "❌ Failed to connect. Please ensure VEDA AI server is running.\n\nRun: python run_veda_ai.py";
+            output.innerText = "Failed to connect. Please ensure VEDA AI server is running.\n\nRun: python run_veda_ai.py";
             output.style.color = "#ff4444";
         }
     }
+}
+
+function updateConnectionStatus(connected) {
+    // Update any connection status indicator in UI
+    const statusEl = document.getElementById("connection-status");
+    if (statusEl) {
+        statusEl.className = connected ? "status-connected" : "status-disconnected";
+        statusEl.textContent = connected ? "Connected" : "Disconnected";
+    }
+}
+
+function showReconnectButton() {
+    // You can add a reconnect button to the UI dynamically
+    const output = document.getElementById("output");
+    if (output) {
+        output.innerHTML += '<br><br><button onclick="manualReconnect()" style="padding:10px 20px;background:#00e5ff;border:none;border-radius:5px;cursor:pointer;">Reconnect</button>';
+    }
+}
+
+function manualReconnect() {
+    reconnectAttempts = 0;
+    connectWebSocket();
 }
 
 // Initialize WebSocket connection when DOM is ready

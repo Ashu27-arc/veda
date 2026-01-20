@@ -1,10 +1,15 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 import sys
 import os
 import asyncio
+import time
+from collections import defaultdict
+from typing import Dict, List
+import hashlib
+import secrets
 
 # Add parent directory to path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -32,7 +37,84 @@ try:
 except Exception as e:
     log_error(f"Failed to start automation engine: {e}")
 
-app = FastAPI(title="VEDA AI", version="4.0.0")
+app = FastAPI(title="VEDA AI", version="5.0.0")
+
+# ========== RATE LIMITING ==========
+class RateLimiter:
+    """Simple in-memory rate limiter"""
+    def __init__(self, max_requests: int = 60, window_seconds: int = 60):
+        self.max_requests = max_requests
+        self.window_seconds = window_seconds
+        self.requests: Dict[str, List[float]] = defaultdict(list)
+    
+    def is_allowed(self, client_id: str) -> bool:
+        """Check if client is allowed to make request"""
+        now = time.time()
+        window_start = now - self.window_seconds
+        
+        # Clean old requests
+        self.requests[client_id] = [
+            req_time for req_time in self.requests[client_id] 
+            if req_time > window_start
+        ]
+        
+        # Check limit
+        if len(self.requests[client_id]) >= self.max_requests:
+            return False
+        
+        # Add current request
+        self.requests[client_id].append(now)
+        return True
+    
+    def get_remaining(self, client_id: str) -> int:
+        """Get remaining requests for client"""
+        now = time.time()
+        window_start = now - self.window_seconds
+        current_requests = len([
+            req_time for req_time in self.requests[client_id] 
+            if req_time > window_start
+        ])
+        return max(0, self.max_requests - current_requests)
+
+# Rate limiters for different endpoints
+api_rate_limiter = RateLimiter(max_requests=60, window_seconds=60)  # 60 req/min for API
+ws_rate_limiter = RateLimiter(max_requests=30, window_seconds=60)   # 30 msg/min for WebSocket
+voice_rate_limiter = RateLimiter(max_requests=10, window_seconds=60)  # 10 req/min for voice
+
+def get_client_id(request: Request = None, websocket: WebSocket = None) -> str:
+    """Get client identifier from request or websocket"""
+    if request:
+        forwarded = request.headers.get("X-Forwarded-For")
+        if forwarded:
+            return forwarded.split(",")[0].strip()
+        return request.client.host if request.client else "unknown"
+    elif websocket:
+        return websocket.client.host if websocket.client else "unknown"
+    return "unknown"
+
+# ========== API KEY AUTHENTICATION (Optional) ==========
+# Generate a session token on startup (for local use)
+SESSION_TOKEN = secrets.token_hex(32)
+API_KEY_ENABLED = os.getenv("VEDA_API_KEY_ENABLED", "false").lower() == "true"
+API_KEY = os.getenv("VEDA_API_KEY", SESSION_TOKEN)
+
+def verify_api_key(request: Request) -> bool:
+    """Verify API key if authentication is enabled"""
+    if not API_KEY_ENABLED:
+        return True
+    
+    # Check header
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+        return secrets.compare_digest(token, API_KEY)
+    
+    # Check query parameter (for browser access)
+    api_key = request.query_params.get("api_key")
+    if api_key:
+        return secrets.compare_digest(api_key, API_KEY)
+    
+    return False
 
 # Secure CORS configuration - only allow local origins
 app.add_middleware(
@@ -44,19 +126,29 @@ app.add_middleware(
         "http://127.0.0.1:3000"
     ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization"],
     max_age=3600,  # Cache preflight requests for 1 hour
 )
 
-# Active WebSocket connections
-active_connections = []
+# Active WebSocket connections with metadata
+active_connections: List[Dict] = []
+MAX_CONNECTIONS = 10  # Limit concurrent WebSocket connections
 
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
+    client_id = get_client_id(websocket=ws)
+    
+    # Check connection limit
+    if len(active_connections) >= MAX_CONNECTIONS:
+        await ws.close(code=1013, reason="Too many connections")
+        log_warning(f"Connection rejected: too many connections from {client_id}")
+        return
+    
     await ws.accept()
-    active_connections.append(ws)
-    log_info("WebSocket connection established")
+    connection_info = {"ws": ws, "client_id": client_id, "connected_at": time.time()}
+    active_connections.append(connection_info)
+    log_info(f"WebSocket connection established from {client_id}")
     
     # Send greeting when connection is established
     jarvis = get_jarvis()
@@ -65,6 +157,15 @@ async def websocket_endpoint(ws: WebSocket):
     
     try:
         while True:
+            # Rate limiting for WebSocket messages
+            if not ws_rate_limiter.is_allowed(client_id):
+                await ws.send_json({
+                    "error": "Rate limit exceeded. Please wait before sending more commands.",
+                    "retry_after": 60
+                })
+                await asyncio.sleep(1)  # Small delay to prevent spam
+                continue
+            
             command = await ws.receive_text()
             
             # Enhanced input validation
@@ -82,30 +183,49 @@ async def websocket_endpoint(ws: WebSocket):
             
             if not validate_command(command):
                 await ws.send_json({"error": "Invalid or potentially malicious command"})
-                log_warning(f"Blocked potentially malicious command: {command}")
+                log_warning(f"Blocked potentially malicious command from {client_id}: {command[:50]}")
                 continue
             
-            log_info(f"WebSocket command received: {command}")
+            log_info(f"WebSocket command from {client_id}: {command}")
             response = process_command(command.strip())
             await ws.send_json({"response": response, "command": command})
             
     except WebSocketDisconnect:
-        log_info("WebSocket disconnected")
-        active_connections.remove(ws)
+        log_info(f"WebSocket disconnected: {client_id}")
     except Exception as e:
-        log_error(f"WebSocket error: {e}")
+        log_error(f"WebSocket error for {client_id}: {e}")
         try:
             await ws.send_json({"error": "An error occurred processing your request"})
         except:
             pass
-        if ws in active_connections:
-            active_connections.remove(ws)
+    finally:
+        # Clean up connection
+        active_connections[:] = [
+            conn for conn in active_connections 
+            if conn.get("ws") != ws
+        ]
 
 @app.get("/voice")
-def voice_command():
+def voice_command(request: Request):
     """Handle voice command request with advanced recognition"""
+    client_id = get_client_id(request)
+    
+    # Rate limiting for voice commands (more restrictive)
+    if not voice_rate_limiter.is_allowed(client_id):
+        remaining = voice_rate_limiter.get_remaining(client_id)
+        log_warning(f"Voice rate limit exceeded for {client_id}")
+        return JSONResponse(
+            status_code=429,
+            content={
+                "error": "Too many voice requests. Please wait before trying again.",
+                "status": "rate_limited",
+                "retry_after": 60,
+                "remaining_requests": remaining
+            }
+        )
+    
     try:
-        log_info("Voice command requested")
+        log_info(f"Voice command requested from {client_id}")
         
         # Use advanced voice recognition
         from python_backend.voice_advanced import listen_command_advanced, test_microphone_access
@@ -141,9 +261,17 @@ def voice_command():
         
         if len(command) > 500:
             return {"error": "Command too long", "status": "error"}
+        
+        # Validate command for security
+        from python_backend.utils import sanitize_input, validate_command
+        command = sanitize_input(command)
+        
+        if not validate_command(command):
+            log_warning(f"Blocked potentially malicious voice command from {client_id}")
+            return {"error": "Invalid command detected", "status": "error"}
             
         response = process_command(command)
-        log_info(f"Voice command processed: {command}")
+        log_info(f"Voice command processed from {client_id}: {command}")
         return {"command": command, "response": response, "status": "success"}
         
     except OSError as e:
@@ -208,15 +336,23 @@ def voice_reset():
         return {"status": "error", "message": str(e)}
 
 @app.get("/health")
-def health_check():
+def health_check(request: Request):
     """Health check endpoint"""
+    client_id = get_client_id(request)
     jarvis = get_jarvis()
     return {
         "status": "healthy", 
         "service": "VEDA AI",
         "owner": jarvis.owner_name,
-        "version": "4.0.0",
-        "ai_mode": "self_training"
+        "version": "5.0.0",
+        "ai_mode": "self_training",
+        "rate_limit": {
+            "api_remaining": api_rate_limiter.get_remaining(client_id),
+            "ws_remaining": ws_rate_limiter.get_remaining(client_id),
+            "voice_remaining": voice_rate_limiter.get_remaining(client_id)
+        },
+        "connections": len(active_connections),
+        "max_connections": MAX_CONNECTIONS
     }
 
 @app.get("/settings")
@@ -384,8 +520,29 @@ async def read_root():
 
 @app.get("/{file_path:path}")
 async def serve_static(file_path: str):
-    """Serve static files"""
+    """Serve static files with security checks"""
+    # Security: Prevent path traversal attacks
+    if ".." in file_path or file_path.startswith("/") or file_path.startswith("\\"):
+        log_warning(f"Blocked path traversal attempt: {file_path}")
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    # Normalize path and check for allowed extensions
+    allowed_extensions = {'.html', '.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.ico', '.svg', '.woff', '.woff2', '.ttf', '.ppn', '.txt'}
+    ext = os.path.splitext(file_path)[1].lower()
+    
+    if ext and ext not in allowed_extensions:
+        log_warning(f"Blocked file access with disallowed extension: {file_path}")
+        raise HTTPException(status_code=403, detail="File type not allowed")
+    
     file_location = os.path.join("python_frontend", file_path)
+    
+    # Ensure file is within python_frontend directory (prevent symlink attacks)
+    abs_file = os.path.abspath(file_location)
+    abs_frontend = os.path.abspath("python_frontend")
+    
+    if not abs_file.startswith(abs_frontend):
+        log_warning(f"Blocked access outside frontend directory: {file_path}")
+        raise HTTPException(status_code=403, detail="Access denied")
     
     if os.path.exists(file_location) and os.path.isfile(file_location):
         return FileResponse(file_location)
