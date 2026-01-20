@@ -25,5 +25,19 @@
     "added_at": "2026-01-20T23:00:20.457535",
     "status": "completed",
     "completed_at": "2026-01-20T23:00:20.467413"
+  },
+  {
+    "name": "System Health Check",
+    "type": "scheduled",
+    "data": {
+      "actions": [
+        "check_disk",
+        "check_memory",
+        "check_updates"
+      ]
+    },
+    "added_at": "2026-01-21T00:30:09.415677",
+    "status": "completed",
+    "completed_at": "2026-01-21T00:30:09.440680"
   }
 ]

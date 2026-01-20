@@ -5,6 +5,7 @@ import time
 import sys
 import os
 import requests
+import socket
 
 # Fix encoding for Windows console (emoji support)
 if sys.platform == 'win32':
@@ -36,14 +37,41 @@ def start_wake():
 
 def start_backend():
     """Start FastAPI backend server"""
-    subprocess.Popen([
+    # Avoid starting a second server if port is already in use
+    if is_port_in_use("127.0.0.1", 8000):
+        safe_print("[i] Port 8000 is already in use. Skipping backend start.")
+        return
+
+    # NOTE: --reload spawns an extra reloader process and can cause port conflicts on Windows.
+    # Keep it off by default; you can enable with VEDA_DEV_RELOAD=true.
+    args = [
         sys.executable,
         "-m", "uvicorn",
         "python_backend.main:app",
         "--host", "127.0.0.1",
         "--port", "8000",
-        "--reload"
-    ])
+    ]
+    if os.getenv("VEDA_DEV_RELOAD", "false").lower() == "true":
+        args.append("--reload")
+
+    try:
+        subprocess.Popen(args)
+    except OSError as e:
+        # WinError 10048/10013: port in use / forbidden
+        safe_print(f"[!] Backend start failed: {e}")
+        safe_print("[i] If you already have VEDA running, just open: http://localhost:8000")
+        return
+
+
+def is_port_in_use(host: str, port: int) -> bool:
+    """Return True if host:port is already bound/listening."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(0.5)
+            return s.connect_ex((host, port)) == 0
+    except Exception:
+        # If we can't determine, assume not in use to avoid breaking startup
+        return False
 
 def wait_for_server():
     """Wait for server to be fully ready"""
@@ -129,7 +157,7 @@ if __name__ == "__main__":
     safe_print("=" * 50)
     safe_print("[...] Please wait while the server initializes...")
     
-    # Start backend server
+    # Start backend server (only if port is free)
     threading.Thread(target=start_backend, daemon=True).start()
     
     # Start wake word detection (optional)
